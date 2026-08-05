@@ -45,7 +45,7 @@ internal class SessionViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val length = settingsRepository.observeSessionLength().first().cards
+            val length = settingsRepository.observeSettings().first().sessionLength.cards
             // A Deck deleted before the Session started draws nothing, because the database
             // took its Cards with it — so there is no separate check for one.
             begin(composeSession(cardRepository.cardsInDeck(deckId), length))

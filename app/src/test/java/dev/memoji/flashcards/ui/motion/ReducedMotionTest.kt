@@ -35,4 +35,21 @@ class ReducedMotionTest {
 
         assertFalse(isReducedMotion(resolver))
     }
+
+    @Test
+    fun `the in-app toggle turns motion off when the system has not`() {
+        assertTrue(reducedMotion(systemSetting = false, userOverride = true))
+    }
+
+    /** The point of the rule: the toggle is an override on, never an override off. */
+    @Test
+    fun `the system setting keeps motion off whatever the toggle says`() {
+        assertTrue(reducedMotion(systemSetting = true, userOverride = false))
+        assertTrue(reducedMotion(systemSetting = true, userOverride = true))
+    }
+
+    @Test
+    fun `with neither asking for it the app animates`() {
+        assertFalse(reducedMotion(systemSetting = false, userOverride = false))
+    }
 }

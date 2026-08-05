@@ -5,6 +5,8 @@ import dev.memoji.flashcards.core.model.Deck
 import dev.memoji.flashcards.core.model.DeckSummary
 import dev.memoji.flashcards.core.model.Grade
 import dev.memoji.flashcards.core.model.SessionLength
+import dev.memoji.flashcards.core.model.ThemePreference
+import dev.memoji.flashcards.core.model.UserSettings
 import dev.memoji.flashcards.core.testing.MutableClock
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
@@ -129,11 +131,19 @@ internal class FakeCardRepository(
 }
 
 internal class FakeSettingsRepository : SettingsRepository {
-    private val sessionLength = MutableStateFlow(SessionLength.DEFAULT)
+    private val settings = MutableStateFlow(UserSettings.DEFAULT)
 
-    override fun observeSessionLength(): Flow<SessionLength> = sessionLength
+    override fun observeSettings(): Flow<UserSettings> = settings
 
     override suspend fun setSessionLength(length: SessionLength) {
-        sessionLength.value = length
+        settings.value = settings.value.copy(sessionLength = length)
+    }
+
+    override suspend fun setTheme(theme: ThemePreference) {
+        settings.value = settings.value.copy(theme = theme)
+    }
+
+    override suspend fun setReducedMotion(reducedMotion: Boolean) {
+        settings.value = settings.value.copy(reducedMotion = reducedMotion)
     }
 }

@@ -1,6 +1,8 @@
 package dev.memoji.flashcards.core.data
 
 import dev.memoji.flashcards.core.model.SessionLength
+import dev.memoji.flashcards.core.model.ThemePreference
+import dev.memoji.flashcards.core.model.UserSettings
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -10,8 +12,16 @@ import kotlinx.coroutines.flow.Flow
  */
 interface SettingsRepository {
 
-    /** [SessionLength.DEFAULT] until the user has chosen otherwise. */
-    fun observeSessionLength(): Flow<SessionLength>
+    /**
+     * [UserSettings.DEFAULT] until the user has chosen otherwise, and a new value on every
+     * write — the Settings screen and the screens a setting governs watch the same flow, so a
+     * change lands everywhere without anything being restarted.
+     */
+    fun observeSettings(): Flow<UserSettings>
 
     suspend fun setSessionLength(length: SessionLength)
+
+    suspend fun setTheme(theme: ThemePreference)
+
+    suspend fun setReducedMotion(reducedMotion: Boolean)
 }
