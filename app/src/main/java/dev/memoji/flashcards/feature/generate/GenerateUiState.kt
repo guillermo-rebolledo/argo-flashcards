@@ -83,9 +83,9 @@ internal sealed interface GenerateUiState {
          * it read a link as a link. It is the same call the request is built from, so the hint
          * cannot promise one thing and the Generation do another.
          */
-        val source: Source get() = Source.of(text)
+        val source: Source = Source.of(text)
 
-        val isLink: Boolean get() = source is Source.Url
+        val isUrl: Boolean get() = source is Source.Url
 
         /** What the user can see they have given it. Whitespace of any kind separates words. */
         val wordCount: Int get() = if (text.isBlank()) 0 else text.trim().split(WHITESPACE).size

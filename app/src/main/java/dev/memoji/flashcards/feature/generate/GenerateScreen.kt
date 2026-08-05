@@ -224,7 +224,7 @@ private fun SourceEntry(
 
         // What the app made of what is in the box, in the user's terms: a link it recognised
         // as one, or a count of what they pasted. Only once there is something to say.
-        if (uiState.isLink) {
+        if (uiState.isUrl) {
             Text(
                 text = stringResource(R.string.generate_link_detected),
                 style = MaterialTheme.typography.labelLarge,

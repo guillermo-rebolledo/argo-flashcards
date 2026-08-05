@@ -20,9 +20,9 @@ sealed interface Source {
          * reachable, or even for existing — that is the fetch's job, and its failure has its
          * own message. All this decides is which of the two things the user meant.
          */
-        fun of(input: String): Source {
-            val trimmed = input.trim()
-            val match = LINK.matchEntire(trimmed) ?: return PastedText(input)
+        fun of(pasted: String): Source {
+            val trimmed = pasted.trim()
+            val match = URL_PATTERN.matchEntire(trimmed) ?: return PastedText(pasted)
             // A link with no scheme is what a copied address bar or a spoken domain looks
             // like. https, not http: every host worth reading from speaks it.
             val scheme = match.groupValues[1]
@@ -34,7 +34,7 @@ sealed interface Source {
          * strict about the host: prose that happens to end in a full stop is not a link, and
          * being wrong in that direction costs the user a Generation.
          */
-        private val LINK = Regex(
+        private val URL_PATTERN = Regex(
             "(https?://)?(?:[\\w-]+\\.)+[a-z]{2,}(?::\\d+)?(?:[/?#]\\S*)?",
             RegexOption.IGNORE_CASE,
         )
@@ -109,7 +109,7 @@ enum class GenerationFailure {
 
     /**
      * Anything else the API can return: a 500, a 529, a status this version does not know. Not
-     * one of the seven the design names, but the alternative is a path with nothing to show.
+     * one the design names, but the alternative is a path with nothing to show.
      */
     UNEXPECTED,
 }

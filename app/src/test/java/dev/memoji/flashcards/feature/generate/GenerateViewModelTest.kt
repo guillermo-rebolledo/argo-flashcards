@@ -124,7 +124,7 @@ class GenerateViewModelTest {
 
         viewModel.setText("https://example.com/big-o")
 
-        assertTrue(viewModel.entry().isLink)
+        assertTrue(viewModel.entry().isUrl)
     }
 
     @Test
@@ -133,7 +133,7 @@ class GenerateViewModelTest {
 
         viewModel.setText("Big-O notation describes how work grows.")
 
-        assertFalse(viewModel.entry().isLink)
+        assertFalse(viewModel.entry().isUrl)
         assertEquals(6, viewModel.entry().wordCount)
     }
 
@@ -393,7 +393,7 @@ class GenerateViewModelTest {
 
         assertEquals("", viewModel.entry().text)
         assertNull(viewModel.entry().failure)
-        assertFalse(viewModel.entry().isLink)
+        assertFalse(viewModel.entry().isUrl)
     }
 
     @Test
