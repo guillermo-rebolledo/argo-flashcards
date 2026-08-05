@@ -52,10 +52,13 @@ internal class SessionViewModel @Inject constructor(
         }
     }
 
-    /** Revealing is deliberate — the Back is not shown until the user asks for it. */
-    fun reveal() {
+    /**
+     * Revealing is deliberate — the Back is not shown until the user asks for it. Asking again
+     * puts it away, so a Card opened by accident can be closed and still attempted.
+     */
+    fun toggleReveal() {
         val reviewing = _uiState.value as? SessionUiState.Reviewing ?: return
-        _uiState.value = reviewing.copy(revealed = true)
+        _uiState.value = reviewing.copy(revealed = !reviewing.revealed)
     }
 
     /**
