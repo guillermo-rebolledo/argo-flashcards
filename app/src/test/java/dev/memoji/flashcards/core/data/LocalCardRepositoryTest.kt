@@ -3,10 +3,8 @@ package dev.memoji.flashcards.core.data
 import dev.memoji.flashcards.core.database.FlashcardsDatabase
 import dev.memoji.flashcards.core.database.inMemoryDatabase
 import dev.memoji.flashcards.core.model.Card
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZoneOffset
+import dev.memoji.flashcards.core.model.Grade
+import dev.memoji.flashcards.core.testing.MutableClock
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -34,9 +32,9 @@ class LocalCardRepositoryTest {
     @Before
     fun openDatabase() = runTest {
         database = inMemoryDatabase()
-        clock = MutableClock(Instant.parse("2026-08-04T09:00:00Z"))
+        clock = MutableClock()
         repository = LocalCardRepository(database.cardDao(), clock)
-        deckRepository = LocalDeckRepository(database.deckDao(), clock)
+        deckRepository = LocalDeckRepository(database.deckDao(), database.cardDao(), clock)
         deckId = deckRepository.createDeck("Big-O notation")
     }
 
@@ -54,7 +52,7 @@ class LocalCardRepositoryTest {
         assertEquals(deckId, card.deckId)
         assertEquals("O(1)", card.front)
         assertEquals("Constant time.", card.back)
-        assertEquals(Instant.parse("2026-08-04T09:00:00Z"), card.createdAt)
+        assertEquals(MutableClock.START, card.createdAt)
     }
 
     @Test
@@ -103,24 +101,78 @@ class LocalCardRepositoryTest {
     @Test
     fun `editing a Card leaves its Mastery streak alone`() = runTest {
         val id = repository.createCard(deckId, "O(1)", "Constant tme.")
-        database.gradeForTest(id, masteryStreak = 4, lastSeenAt = 99L)
+        repository.recordGrade(id, Grade.KNEW_IT)
+        val seenAt = repository.observeCards(deckId).first().single().lastSeenAt
+        clock.advanceOneMinute()
 
         repository.updateCard(id, "O(1)", "Constant time.")
 
         val card = repository.observeCards(deckId).first().single()
-        assertEquals(4, card.masteryStreak)
-        assertEquals(Instant.ofEpochMilli(99L), card.lastSeenAt)
+        assertEquals(1, card.masteryStreak)
+        assertEquals(seenAt, card.lastSeenAt)
     }
 
     @Test
-    fun `a Card is Mastered at the threshold and Learning below it`() = runTest {
+    fun `Knew it lifts the Mastery streak by one and Again drops it to zero`() = runTest {
         val id = repository.createCard(deckId, "O(1)", "Constant time.")
 
-        database.gradeForTest(id, masteryStreak = Card.MASTERY_THRESHOLD - 1)
+        repository.recordGrade(id, Grade.KNEW_IT)
+        assertEquals(1, repository.observeCards(deckId).first().single().masteryStreak)
+
+        repository.recordGrade(id, Grade.KNEW_IT)
+        assertEquals(2, repository.observeCards(deckId).first().single().masteryStreak)
+
+        repository.recordGrade(id, Grade.AGAIN)
+        assertEquals(0, repository.observeCards(deckId).first().single().masteryStreak)
+    }
+
+    @Test
+    fun `three consecutive Knew it Grades make a Card Mastered, and two do not`() = runTest {
+        val id = repository.createCard(deckId, "O(1)", "Constant time.")
+
+        repeat(Card.MASTERY_THRESHOLD - 1) { repository.recordGrade(id, Grade.KNEW_IT) }
         assertFalse(repository.observeCards(deckId).first().single().isMastered)
 
-        database.gradeForTest(id, masteryStreak = Card.MASTERY_THRESHOLD)
+        repository.recordGrade(id, Grade.KNEW_IT)
         assertTrue(repository.observeCards(deckId).first().single().isMastered)
+    }
+
+    @Test
+    fun `Again on a Mastered Card returns it to Learning with a streak of zero`() = runTest {
+        val id = repository.createCard(deckId, "O(1)", "Constant time.")
+        repeat(Card.MASTERY_THRESHOLD) { repository.recordGrade(id, Grade.KNEW_IT) }
+
+        repository.recordGrade(id, Grade.AGAIN)
+
+        val card = repository.observeCards(deckId).first().single()
+        assertEquals(0, card.masteryStreak)
+        assertFalse(card.isMastered)
+    }
+
+    /** The streak survives a Session ending after it; only a later Grade may move it. */
+    @Test
+    fun `a Grade on one Card leaves the others alone`() = runTest {
+        val graded = repository.createCard(deckId, "O(1)", "Constant time.")
+        val untouched = repository.createCard(deckId, "O(n)", "Linear time.")
+
+        repository.recordGrade(graded, Grade.KNEW_IT)
+
+        val card = repository.observeCards(deckId).first().single { it.id == untouched }
+        assertEquals(0, card.masteryStreak)
+        assertEquals(null, card.lastSeenAt)
+    }
+
+    @Test
+    fun `both Grades stamp the Card as seen now`() = runTest {
+        val knew = repository.createCard(deckId, "O(1)", "Constant time.")
+        val again = repository.createCard(deckId, "O(n)", "Linear time.")
+        clock.advanceOneMinute()
+
+        repository.recordGrade(knew, Grade.KNEW_IT)
+        repository.recordGrade(again, Grade.AGAIN)
+
+        val seen = repository.observeCards(deckId).first().map { it.lastSeenAt }
+        assertEquals(listOf(MutableClock.START.plusSeconds(60)), seen.distinct())
     }
 
     @Test
@@ -140,30 +192,4 @@ class LocalCardRepositoryTest {
 
         assertEquals(emptyList<Card>(), repository.observeCards(deckId).first())
     }
-
-    /** A [Clock] the test moves by hand, so ordering does not depend on how fast it runs. */
-    private class MutableClock(private var now: Instant) : Clock() {
-        override fun getZone() = ZoneOffset.UTC
-        override fun withZone(zone: ZoneId) = this
-        override fun instant() = now
-        fun advanceOneMinute() {
-            now = now.plusSeconds(60)
-        }
-    }
-}
-
-/**
- * Sessions are the only thing that will ever move a Mastery streak, and they do not exist yet.
- * Until they do, a test puts one on the row directly — no production code can, which is the
- * point of the tests above.
- */
-private fun FlashcardsDatabase.gradeForTest(
-    id: Long,
-    masteryStreak: Int,
-    lastSeenAt: Long? = null,
-) {
-    openHelper.writableDatabase.execSQL(
-        "UPDATE cards SET mastery_streak = ?, last_seen_at = ? WHERE id = ?",
-        arrayOf<Any?>(masteryStreak, lastSeenAt, id),
-    )
 }

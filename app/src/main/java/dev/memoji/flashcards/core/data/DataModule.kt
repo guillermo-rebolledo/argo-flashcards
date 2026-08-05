@@ -17,4 +17,8 @@ internal abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindCardRepository(repository: LocalCardRepository): CardRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSettingsRepository(repository: LocalSettingsRepository): SettingsRepository
 }

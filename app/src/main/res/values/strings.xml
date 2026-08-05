@@ -48,6 +48,36 @@
     <!-- The count comes from Card.MASTERY_THRESHOLD, so the copy cannot outlive the rule. -->
     <string name="cards_none_mastered_body">A Card is Mastered once its Mastery streak reaches %1$d.</string>
 
+    <string name="session_start">Start session</string>
+    <string name="session_end">End session</string>
+    <!-- Which Card the user is on, not how many are behind them: "3 of 5". -->
+    <string name="session_position">%1$d of %2$d</string>
+    <string name="session_tap_to_reveal">Tap to reveal</string>
+    <string name="session_again">Again</string>
+    <string name="session_knew_it">Knew it</string>
+    <string name="session_done_title">Session done</string>
+    <!-- The score, not a count of anything: "3 of 5" remembered. -->
+    <string name="session_score">%1$d of %2$d</string>
+    <string name="session_score_caption">remembered on the first pass</string>
+    <string name="session_misses_title">Worth another look</string>
+    <!-- The results screen's job beyond the score: a short Session is a complete Session. -->
+    <string name="session_reassurance">Two minutes is a full Session. Nothing is waiting for you tomorrow if you skip it.</string>
+    <string name="session_review_misses">Review the misses</string>
+    <string name="session_done">Done</string>
+    <string name="session_empty_title">Nothing to review</string>
+    <string name="session_empty_body">This Deck has no Cards yet. Add one and it will be waiting here.</string>
+
+    <string name="decks_up_next">Up next</string>
+    <!-- A Deck can hold a single Card, so the count inflects. -->
+    <plurals name="decks_card_count">
+        <item quantity="one">%1$d Card</item>
+        <item quantity="other">%1$d Cards</item>
+    </plurals>
+    <!-- %1$s is that count; the rest reads the same at every number. -->
+    <string name="decks_up_next_summary">%1$s · %2$d of %3$d Mastered</string>
+    <string name="decks_see_cards">See cards</string>
+    <string name="decks_your_decks">Your Decks</string>
+
     <string name="placeholder_progress">Your streak and how much of each Deck you have Mastered will show up here.</string>
     <string name="placeholder_settings">Your API key, Session length, reminders and theme will be set here.</string>
 </resources>

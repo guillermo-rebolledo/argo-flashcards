@@ -21,14 +21,13 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class DeckDetailViewModelTest {
 
-    private val deckRepository = FakeDeckRepository()
     private val cardRepository = FakeCardRepository()
+    private val deckRepository = FakeDeckRepository(cardRepository)
     private var deckId = 0L
 
     @Before
     fun useTestDispatcher() = runTest {
         Dispatchers.setMain(UnconfinedTestDispatcher())
-        deckRepository.onDeckDeleted = cardRepository::cascadeDeckDelete
         deckId = deckRepository.createDeck("Big-O notation")
     }
 
@@ -87,11 +86,11 @@ class DeckDetailViewModelTest {
         val viewModel = watchedViewModel()
         viewModel.addCard("O(1)", "Constant tme.")
         val id = viewModel.ids().single()
-        cardRepository.setMasteryStreak(id, 4)
+        cardRepository.master(id)
 
         viewModel.editCard(id, "O(1)", "Constant time.")
 
-        assertEquals(4, viewModel.ready().cards.single().masteryStreak)
+        assertEquals(Card.MASTERY_THRESHOLD, viewModel.ready().cards.single().masteryStreak)
     }
 
     @Test
@@ -119,7 +118,7 @@ class DeckDetailViewModelTest {
         val viewModel = watchedViewModel()
         viewModel.addCard("O(1)", "Constant time.")
         viewModel.addCard("O(n)", "Linear time.")
-        cardRepository.setMasteryStreak(viewModel.ids().first(), Card.MASTERY_THRESHOLD)
+        cardRepository.master(viewModel.ids().first())
 
         assertEquals(CardFilter.ALL, viewModel.ready().filter)
         assertEquals(2, viewModel.ready().cards.size)
@@ -131,7 +130,7 @@ class DeckDetailViewModelTest {
         viewModel.addCard("Learning one", "b")
         viewModel.addCard("Mastered one", "b")
         val masteredId = viewModel.ready().cards.first { it.front == "Mastered one" }.id
-        cardRepository.setMasteryStreak(masteredId, Card.MASTERY_THRESHOLD)
+        cardRepository.master(masteredId)
 
         viewModel.setFilter(CardFilter.LEARNING)
         assertEquals(listOf("Learning one"), viewModel.fronts())
@@ -192,7 +191,7 @@ class DeckDetailViewModelTest {
         val viewModel = watchedViewModel()
         viewModel.addCard("O(1)", "Constant time.")
         viewModel.addCard("O(n)", "Linear time.")
-        cardRepository.setMasteryStreak(viewModel.ids().first(), Card.MASTERY_THRESHOLD)
+        cardRepository.master(viewModel.ids().first())
 
         viewModel.setFilter(CardFilter.MASTERED)
 
