@@ -1,6 +1,6 @@
 package dev.memoji.flashcards.feature.decks
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -29,20 +29,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.memoji.flashcards.R
 import dev.memoji.flashcards.core.model.Deck
+import dev.memoji.flashcards.ui.component.DeckNameDialog
+import dev.memoji.flashcards.ui.component.DeleteDeckDialog
+import dev.memoji.flashcards.ui.component.EmptyState
+import dev.memoji.flashcards.ui.component.FabClearance
 
 @Composable
-fun DecksScreen(contentPadding: PaddingValues) {
+fun DecksScreen(contentPadding: PaddingValues, onOpenDeck: (Long) -> Unit) {
     val viewModel: DecksViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     DecksScreen(
         uiState = uiState,
+        onOpenDeck = onOpenDeck,
         onCreateDeck = viewModel::createDeck,
         onRenameDeck = viewModel::renameDeck,
         onDeleteDeck = viewModel::deleteDeck,
@@ -53,6 +57,7 @@ fun DecksScreen(contentPadding: PaddingValues) {
 @Composable
 internal fun DecksScreen(
     uiState: DecksUiState,
+    onOpenDeck: (Long) -> Unit,
     onCreateDeck: (String) -> Unit,
     onRenameDeck: (Long, String) -> Unit,
     onDeleteDeck: (Long) -> Unit,
@@ -90,6 +95,7 @@ internal fun DecksScreen(
                 )
                 is DecksUiState.Decks -> DeckList(
                     decks = uiState.decks,
+                    onOpen = { onOpenDeck(it.id) },
                     onRename = { renamingId = it.id },
                     onDelete = { deletingId = it.id },
                     bottomPadding = bottomPadding,
@@ -152,6 +158,7 @@ internal fun DecksScreen(
 @Composable
 private fun DeckList(
     decks: List<Deck>,
+    onOpen: (Deck) -> Unit,
     onRename: (Deck) -> Unit,
     onDelete: (Deck) -> Unit,
     bottomPadding: Dp,
@@ -166,6 +173,7 @@ private fun DeckList(
         items(items = decks, key = { it.id }) { deck ->
             DeckRow(
                 deck = deck,
+                onOpen = { onOpen(deck) },
                 onRename = { onRename(deck) },
                 onDelete = { onDelete(deck) },
             )
@@ -174,11 +182,17 @@ private fun DeckList(
 }
 
 @Composable
-private fun DeckRow(deck: Deck, onRename: () -> Unit, onDelete: () -> Unit) {
+private fun DeckRow(
+    deck: Deck,
+    onOpen: () -> Unit,
+    onRename: () -> Unit,
+    onDelete: () -> Unit,
+) {
     var menuOpen by remember { mutableStateOf(false) }
 
     ListItem(
         headlineContent = { Text(deck.name) },
+        modifier = Modifier.clickable(onClick = onOpen),
         trailingContent = {
             Box {
                 IconButton(onClick = { menuOpen = true }) {
@@ -196,7 +210,7 @@ private fun DeckRow(deck: Deck, onRename: () -> Unit, onDelete: () -> Unit) {
                         },
                     )
                     DropdownMenuItem(
-                        text = { Text(stringResource(R.string.decks_delete)) },
+                        text = { Text(stringResource(R.string.action_delete)) },
                         onClick = {
                             menuOpen = false
                             onDelete()
@@ -217,26 +231,10 @@ private fun EmptyDecks(
     bottomPadding: Dp,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = bottomPadding + FabClearance)
-            .padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(R.string.decks_empty_title),
-            style = MaterialTheme.typography.titleLarge,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(R.string.decks_empty_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
+    EmptyState(
+        title = stringResource(R.string.decks_empty_title),
+        body = stringResource(R.string.decks_empty_body),
+        bottomPadding = bottomPadding,
+        modifier = modifier,
+    )
 }
-
-private val FabClearance = 88.dp

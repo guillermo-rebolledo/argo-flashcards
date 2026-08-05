@@ -16,6 +16,10 @@ interface DeckDao {
     @Query("SELECT * FROM decks ORDER BY created_at DESC, id DESC")
     fun observeAll(): Flow<List<DeckEntity>>
 
+    /** Emits null once the Deck is deleted, so a screen showing it knows to leave. */
+    @Query("SELECT * FROM decks WHERE id = :id")
+    fun observeById(id: Long): Flow<DeckEntity?>
+
     /** Returns the id Room assigned to the new row. */
     @Insert
     suspend fun insert(deck: DeckEntity): Long

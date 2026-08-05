@@ -1,13 +1,8 @@
 package dev.memoji.flashcards.feature.decks
 
-import dev.memoji.flashcards.core.data.DeckRepository
-import dev.memoji.flashcards.core.model.Deck
-import java.time.Instant
+import dev.memoji.flashcards.core.data.FakeDeckRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -107,27 +102,4 @@ class DecksViewModelTest {
     private fun DecksViewModel.decks() = (uiState.value as DecksUiState.Decks).decks
     private fun DecksViewModel.deckNames() = decks().map { it.name }
     private fun DecksViewModel.deckIds() = decks().map { it.id }
-
-    /** A stand-in written by hand — the project uses no mocking library. */
-    private class FakeDeckRepository : DeckRepository {
-        private val decks = MutableStateFlow(emptyList<Deck>())
-        private var nextId = 1L
-
-        override fun observeDecks(): Flow<List<Deck>> =
-            decks.map { list -> list.sortedByDescending(Deck::createdAt) }
-
-        override suspend fun createDeck(name: String): Long {
-            val id = nextId++
-            decks.value += Deck(id, name.trim(), Instant.ofEpochMilli(id))
-            return id
-        }
-
-        override suspend fun renameDeck(id: Long, name: String) {
-            decks.value = decks.value.map { if (it.id == id) it.copy(name = name.trim()) else it }
-        }
-
-        override suspend fun deleteDeck(id: Long) {
-            decks.value = decks.value.filterNot { it.id == id }
-        }
-    }
 }

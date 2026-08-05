@@ -12,10 +12,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import dev.memoji.flashcards.feature.deckdetail.DeckDetailRoute
+import dev.memoji.flashcards.feature.deckdetail.DeckDetailScreen
 import dev.memoji.flashcards.feature.decks.DecksScreen
 import dev.memoji.flashcards.feature.progress.ProgressScreen
 import dev.memoji.flashcards.feature.settings.SettingsScreen
@@ -25,13 +29,19 @@ import dev.memoji.flashcards.ui.navigation.TopLevelDestination
 fun FlashcardsApp(navController: NavHostController = rememberNavController()) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = TopLevelDestination.forRoute(backStackEntry?.destination?.route)
+    // Null before the graph has attached, which is the start destination on its way in — a tab.
+    val onTopLevel = backStackEntry == null || currentDestination != null
 
     Scaffold(
         bottomBar = {
-            FlashcardsNavigationBar(
-                currentDestination = currentDestination,
-                onSelect = navController::navigateToTopLevel,
-            )
+            // Only the three tabs carry the bar. A Deck opened from the list is a screen the
+            // user came into and backs out of, not a fourth place to switch between.
+            if (onTopLevel) {
+                FlashcardsNavigationBar(
+                    currentDestination = currentDestination,
+                    onSelect = navController::navigateToTopLevel,
+                )
+            }
         },
     ) { innerPadding ->
         // Scaffold reports the insets the bars occupy; the NavHost hands them to each screen so
@@ -41,9 +51,27 @@ fun FlashcardsApp(navController: NavHostController = rememberNavController()) {
             startDestination = TopLevelDestination.START.route,
             modifier = Modifier.fillMaxSize(),
         ) {
-            composable(TopLevelDestination.DECKS.route) { DecksScreen(innerPadding) }
+            composable(TopLevelDestination.DECKS.route) {
+                DecksScreen(
+                    contentPadding = innerPadding,
+                    onOpenDeck = { navController.navigate(DeckDetailRoute.of(it)) },
+                )
+            }
             composable(TopLevelDestination.PROGRESS.route) { ProgressScreen(innerPadding) }
             composable(TopLevelDestination.SETTINGS.route) { SettingsScreen(innerPadding) }
+            composable(
+                route = DeckDetailRoute.PATTERN,
+                arguments = listOf(
+                    navArgument(DeckDetailRoute.DECK_ID_ARG) { type = NavType.LongType },
+                ),
+            ) {
+                DeckDetailScreen(
+                    contentPadding = innerPadding,
+                    // popBackStack rather than navigateUp: this is also how a deleted Deck
+                    // leaves, and there is no up-hierarchy to walk beyond the list.
+                    onBack = { navController.popBackStack() },
+                )
+            }
         }
     }
 }

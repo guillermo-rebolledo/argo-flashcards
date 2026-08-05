@@ -79,6 +79,25 @@ class LocalDeckRepositoryTest {
     }
 
     @Test
+    fun `one Deck can be watched on its own`() = runTest {
+        val id = repository.createDeck("Big-O notation")
+        repository.createDeck("Git basics")
+
+        assertEquals("Big-O notation", repository.observeDeck(id).first()?.name)
+    }
+
+    /** How the Deck detail screen learns the Deck it is showing has been deleted. */
+    @Test
+    fun `watching a Deck that is not there reads as null`() = runTest {
+        val id = repository.createDeck("Doomed")
+
+        repository.deleteDeck(id)
+
+        assertEquals(null, repository.observeDeck(id).first())
+        assertEquals(null, repository.observeDeck(404L).first())
+    }
+
+    @Test
     fun `a deleted Deck is gone`() = runTest {
         val id = repository.createDeck("Doomed")
 

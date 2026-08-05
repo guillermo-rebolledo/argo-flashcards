@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Flashcards</string>
 
     <string name="destination_decks">Decks</string>
@@ -7,17 +7,46 @@
     <string name="destination_settings">Settings</string>
 
     <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_go_back">Go back</string>
 
     <string name="decks_new_deck">New deck</string>
     <string name="decks_create">Create</string>
     <string name="decks_rename">Rename</string>
-    <string name="decks_delete">Delete</string>
     <string name="decks_name_label">Deck name</string>
     <string name="decks_options_for">More options for %1$s</string>
     <string name="decks_delete_title">Delete %1$s?</string>
     <string name="decks_delete_body">This Deck goes for good. There is no undo.</string>
     <string name="decks_empty_title">No Decks yet</string>
     <string name="decks_empty_body">Your Decks will show up here. Tap New deck to name your first one.</string>
+
+    <string name="cards_add_card">Add card</string>
+    <string name="cards_new_card">New card</string>
+    <string name="cards_edit_card">Edit card</string>
+    <string name="cards_add">Add</string>
+    <string name="cards_front_label">Front</string>
+    <string name="cards_back_label">Back</string>
+    <string name="cards_front_supporting">One idea per card</string>
+    <string name="cards_options_for">More options for %1$s</string>
+    <string name="cards_delete_title">Delete “%1$s”?</string>
+    <string name="cards_delete_body">This Card goes for good. There is no undo.</string>
+    <!--
+        Not a plural: "Mastered" is the state the Cards are in, not a noun the count inflects,
+        and "1 of 1 Mastered" reads the same as "8 of 12 Mastered".
+    -->
+    <string name="cards_mastery_summary" tools:ignore="PluralsCandidate">%1$d of %2$d Mastered</string>
+    <string name="cards_filter_all">All</string>
+    <string name="cards_filter_learning">Learning</string>
+    <string name="cards_filter_mastered">Mastered</string>
+    <string name="cards_empty_title">No Cards yet</string>
+    <string name="cards_empty_body">A Card has a Front and a Back — one idea, never two. Tap Add card to write your first.</string>
+    <string name="cards_none_learning_title">Nothing left to learn</string>
+    <string name="cards_none_learning_body">Every Card in this Deck is Mastered.</string>
+    <string name="cards_none_mastered_title">Nothing Mastered yet</string>
+    <!-- The count comes from Card.MASTERY_THRESHOLD, so the copy cannot outlive the rule. -->
+    <string name="cards_none_mastered_body">A Card is Mastered once its Mastery streak reaches %1$d.</string>
 
     <string name="placeholder_progress">Your streak and how much of each Deck you have Mastered will show up here.</string>
     <string name="placeholder_settings">Your API key, Session length, reminders and theme will be set here.</string>
