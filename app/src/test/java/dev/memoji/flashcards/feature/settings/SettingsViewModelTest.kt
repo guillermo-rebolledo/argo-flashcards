@@ -80,6 +80,17 @@ class SettingsViewModelTest {
         assertFalse(viewModel.uiState.value.reducedMotion)
     }
 
+    @Test
+    fun `the hide-streak toggle stores both positions`() = runTest {
+        val viewModel = watchedViewModel()
+
+        viewModel.setHideStreak(true)
+        assertTrue(viewModel.uiState.value.hideStreak)
+
+        viewModel.setHideStreak(false)
+        assertFalse(viewModel.uiState.value.hideStreak)
+    }
+
     /**
      * The screen reads the same flow every other screen reads, so a preference changed
      * anywhere — here or by a later restore — arrives without the screen being rebuilt.

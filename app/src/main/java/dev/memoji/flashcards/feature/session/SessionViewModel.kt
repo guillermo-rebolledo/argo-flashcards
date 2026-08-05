@@ -6,10 +6,13 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.memoji.flashcards.core.coroutines.ApplicationScope
 import dev.memoji.flashcards.core.data.CardRepository
+import dev.memoji.flashcards.core.data.SessionRepository
 import dev.memoji.flashcards.core.data.SettingsRepository
 import dev.memoji.flashcards.core.domain.composeSession
 import dev.memoji.flashcards.core.model.Card
 import dev.memoji.flashcards.core.model.Grade
+import java.time.Clock
+import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,12 +25,17 @@ import kotlinx.coroutines.launch
  * One sitting. The Cards are drawn once, when the Session starts, and held here for as long as
  * it lasts: a Session the user is part-way through must not reshuffle underneath them because
  * a Grade they just gave changed what the Deck would compose now.
+ *
+ * The sitting is also what Progress is counted from, so it leaves exactly one row in the
+ * Session log when it ends, however it ended.
  */
 @HiltViewModel
 internal class SessionViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val cardRepository: CardRepository,
+    private val sessionRepository: SessionRepository,
     private val settingsRepository: SettingsRepository,
+    private val clock: Clock,
     @ApplicationScope private val applicationScope: CoroutineScope,
 ) : ViewModel() {
 
@@ -42,6 +50,18 @@ internal class SessionViewModel @Inject constructor(
     private var position = 0
     private var knewIt = 0
     private val misses = mutableListOf<Card>()
+
+    /** When the user sat down, which is the day the whole sitting belongs to. */
+    private val startedAt: Instant = clock.instant()
+
+    /**
+     * Everything Graded since then, the pass over the Misses included. The user sat down once,
+     * so the log gets one row — [knewIt] is the first pass alone and is what the score is
+     * counted from, which is a different question.
+     */
+    private var reviewedInSitting = 0
+    private var knewItInSitting = 0
+    private var recorded = false
 
     init {
         viewModelScope.launch {
@@ -70,9 +90,13 @@ internal class SessionViewModel @Inject constructor(
         val card = reviewing.card
 
         when (grade) {
-            Grade.KNEW_IT -> knewIt++
+            Grade.KNEW_IT -> {
+                knewIt++
+                knewItInSitting++
+            }
             Grade.AGAIN -> misses += card
         }
+        reviewedInSitting++
         // Deliberately not `viewModelScope`: the user can leave the moment they have graded,
         // and a Grade that is dropped because the screen went away is the silent data loss
         // this whole feature is meant to avoid.
@@ -99,6 +123,28 @@ internal class SessionViewModel @Inject constructor(
         val finished = _uiState.value as? SessionUiState.Finished ?: return
         if (finished.misses.isEmpty()) return
         begin(finished.misses)
+    }
+
+    /**
+     * Writes the sitting to the Session log, once. Called when the screen goes away rather than
+     * from a button, because every way out of a Session is the same sitting ending: Done, the
+     * close button, the system Back, and the app being swiped away all arrive here. A Session
+     * nobody Graded a Card in is not a sitting and leaves no row.
+     */
+    internal fun recordSession() {
+        if (recorded || reviewedInSitting == 0) return
+        recorded = true
+        val reviewed = reviewedInSitting
+        val knewIt = knewItInSitting
+        // As with a Grade, deliberately not `viewModelScope`: by the time this runs the screen
+        // is already on its way out, and the scope with it.
+        applicationScope.launch {
+            sessionRepository.recordSession(deckId, startedAt, reviewed, knewIt)
+        }
+    }
+
+    override fun onCleared() {
+        recordSession()
     }
 
     private fun begin(session: List<Card>) {

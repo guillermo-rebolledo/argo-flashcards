@@ -29,7 +29,14 @@ internal object DatabaseModule {
     @Provides
     fun provideCardDao(database: FlashcardsDatabase): CardDao = database.cardDao()
 
-    /** Injected rather than read statically so tests can decide what "now" is. */
     @Provides
-    fun provideClock(): Clock = Clock.systemUTC()
+    fun provideSessionDao(database: FlashcardsDatabase): SessionDao = database.sessionDao()
+
+    /**
+     * Injected rather than read statically so tests can decide what "now" is. The device's own
+     * zone, not UTC: a day streak counts the user's days, and someone studying at eleven at
+     * night in Santiago has not studied tomorrow.
+     */
+    @Provides
+    fun provideClock(): Clock = Clock.systemDefaultZone()
 }

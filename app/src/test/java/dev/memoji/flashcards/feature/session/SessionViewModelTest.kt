@@ -3,10 +3,14 @@ package dev.memoji.flashcards.feature.session
 import androidx.lifecycle.SavedStateHandle
 import dev.memoji.flashcards.core.data.FakeCardRepository
 import dev.memoji.flashcards.core.data.FakeDeckRepository
+import dev.memoji.flashcards.core.data.FakeSessionRepository
 import dev.memoji.flashcards.core.data.FakeSettingsRepository
 import dev.memoji.flashcards.core.model.Card
 import dev.memoji.flashcards.core.model.Grade
+import dev.memoji.flashcards.core.model.Session
 import dev.memoji.flashcards.core.model.SessionLength
+import dev.memoji.flashcards.core.testing.MutableClock
+import java.time.Duration
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,8 +30,10 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class SessionViewModelTest {
 
-    private val cardRepository = FakeCardRepository()
+    private val clock = MutableClock()
+    private val cardRepository = FakeCardRepository(clock)
     private val deckRepository = FakeDeckRepository(cardRepository)
+    private val sessionRepository = FakeSessionRepository(clock)
     private val settingsRepository = FakeSettingsRepository()
     private var deckId = 0L
 
@@ -246,6 +252,84 @@ class SessionViewModelTest {
         assertEquals(SessionUiState.Empty, viewModel().uiState.value)
     }
 
+    @Test
+    fun `a finished Session leaves one row saying what was studied and for how long`() = runTest {
+        addCards(3)
+        val viewModel = viewModel()
+        clock.advance(Duration.ofMinutes(2))
+
+        viewModel.grade(Grade.KNEW_IT)
+        viewModel.grade(Grade.AGAIN)
+        viewModel.grade(Grade.KNEW_IT)
+        viewModel.recordSession()
+
+        val session = loggedSessions().single()
+        assertEquals(deckId, session.deckId)
+        assertEquals(MutableClock.START, session.started)
+        assertEquals(3, session.cardsReviewed)
+        assertEquals(2, session.knewIt)
+        assertEquals(Duration.ofMinutes(2), session.duration)
+    }
+
+    /**
+     * Stopping is never punished, and that includes not being told the day did not count: the
+     * Cards the user did get through are theirs.
+     */
+    @Test
+    fun `ending a Session early still logs the Cards that were reviewed`() = runTest {
+        addCards(5)
+        val viewModel = viewModel()
+
+        viewModel.grade(Grade.KNEW_IT)
+        viewModel.grade(Grade.AGAIN)
+        viewModel.recordSession()
+
+        val session = loggedSessions().single()
+        assertEquals(2, session.cardsReviewed)
+        assertEquals(1, session.knewIt)
+    }
+
+    @Test
+    fun `a Session nobody Graded a Card in is not logged at all`() = runTest {
+        addCards(5)
+        val viewModel = viewModel()
+
+        viewModel.toggleReveal()
+        viewModel.recordSession()
+
+        assertEquals(emptyList<Session>(), loggedSessions())
+    }
+
+    /** The user sat down once. Whatever the screen does on the way out, the log gets one row. */
+    @Test
+    fun `the sitting is logged once however many times it is asked for`() = runTest {
+        addCards(2)
+        val viewModel = viewModel()
+        repeat(2) { viewModel.grade(Grade.KNEW_IT) }
+
+        viewModel.recordSession()
+        viewModel.recordSession()
+
+        assertEquals(1, loggedSessions().size)
+    }
+
+    @Test
+    fun `a pass over the Misses is part of the same sitting, not a second one`() = runTest {
+        addCards(3)
+        val viewModel = viewModel()
+        viewModel.grade(Grade.AGAIN)
+        viewModel.grade(Grade.KNEW_IT)
+        viewModel.grade(Grade.KNEW_IT)
+
+        viewModel.reviewMisses()
+        viewModel.grade(Grade.KNEW_IT)
+        viewModel.recordSession()
+
+        val session = loggedSessions().single()
+        assertEquals(4, session.cardsReviewed)
+        assertEquals(3, session.knewIt)
+    }
+
     private suspend fun addCards(count: Int) {
         repeat(count) { cardRepository.createCard(deckId, "Front $it", "Back $it") }
     }
@@ -258,11 +342,15 @@ class SessionViewModelTest {
     private fun TestScope.viewModel() = SessionViewModel(
         savedStateHandle = SavedStateHandle(mapOf(SessionRoute.DECK_ID_ARG to deckId)),
         cardRepository = cardRepository,
+        sessionRepository = sessionRepository,
         settingsRepository = settingsRepository,
+        clock = clock,
         applicationScope = CoroutineScope(
             backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler),
         ),
     )
+
+    private suspend fun loggedSessions() = sessionRepository.observeSessions().first()
 
     private fun SessionViewModel.reviewing() = uiState.value as SessionUiState.Reviewing
     private fun SessionViewModel.finished() = uiState.value as SessionUiState.Finished
