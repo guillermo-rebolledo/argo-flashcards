@@ -18,7 +18,7 @@ class TealColorSchemeTest {
 
     @Test
     fun `light teal keeps the seed colour from the design as its primary`() {
-        assertEquals(Color(0xFF006A60), TealLightColorScheme.primary)
+        assertEquals(TealSeed, TealLightColorScheme.primary)
     }
 
     @Test

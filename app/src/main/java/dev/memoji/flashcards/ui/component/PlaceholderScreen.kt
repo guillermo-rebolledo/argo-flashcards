@@ -29,8 +29,10 @@ fun PlaceholderScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(contentPadding)
             .verticalScroll(rememberScrollState())
+            // Inside the scroll, so content passes under the bars rather than stopping at
+            // them, but still comes to rest clear of both.
+            .padding(contentPadding)
             .padding(horizontal = 24.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
