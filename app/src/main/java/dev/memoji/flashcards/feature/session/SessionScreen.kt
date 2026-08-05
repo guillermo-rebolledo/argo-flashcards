@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -69,7 +69,8 @@ internal fun SessionScreen(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .fillMaxHeight()
             .padding(
                 top = contentPadding.calculateTopPadding(),
                 bottom = contentPadding.calculateBottomPadding(),
@@ -174,12 +175,14 @@ private fun ReviewCard(uiState: SessionUiState.Reviewing, onReveal: () -> Unit) 
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 320.dp)
             .clickable(enabled = !uiState.revealed, onClick = onReveal),
     ) {
+        // Tall enough to be worth tapping and to keep the Card from resizing as the Back
+        // appears, but sized to what it says rather than to the screen.
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .heightIn(min = ReviewCardHeight)
                 .padding(horizontal = 24.dp, vertical = 32.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
         ) {
@@ -308,6 +311,9 @@ private fun ColumnScope.EmptySession(onFinish: () -> Unit) {
         modifier = Modifier.weight(1f),
     )
 }
+
+/** Taken from the design, which sets the Card a minimum height rather than a fixed one. */
+private val ReviewCardHeight: Dp = 320.dp
 
 /** The touch target Material gives an icon button, mirrored to keep the counter centred. */
 private val IconButtonSize: Dp = 48.dp

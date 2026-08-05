@@ -35,6 +35,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -255,7 +256,11 @@ private fun UpNextCard(
             Text(
                 text = stringResource(
                     R.string.decks_up_next_summary,
-                    summary.cardCount,
+                    pluralStringResource(
+                        R.plurals.decks_card_count,
+                        summary.cardCount,
+                        summary.cardCount,
+                    ),
                     summary.masteredCount,
                     summary.cardCount,
                 ),

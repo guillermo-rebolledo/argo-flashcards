@@ -67,8 +67,13 @@
     <string name="session_empty_body">This Deck has no Cards yet. Add one and it will be waiting here.</string>
 
     <string name="decks_up_next">Up next</string>
-    <!-- Not a plural: the count is the Session, and "1 card" never happens below a length of 3. -->
-    <string name="decks_up_next_summary" tools:ignore="PluralsCandidate">%1$d cards · %2$d of %3$d Mastered</string>
+    <!-- A Deck can hold a single Card, so the count inflects. -->
+    <plurals name="decks_card_count">
+        <item quantity="one">%1$d card</item>
+        <item quantity="other">%1$d cards</item>
+    </plurals>
+    <!-- %1$s is that count; the rest reads the same at every number. -->
+    <string name="decks_up_next_summary" tools:ignore="PluralsCandidate">%1$s · %2$d of %3$d Mastered</string>
     <string name="decks_see_cards">See cards</string>
     <string name="decks_your_decks">Your decks</string>
 
