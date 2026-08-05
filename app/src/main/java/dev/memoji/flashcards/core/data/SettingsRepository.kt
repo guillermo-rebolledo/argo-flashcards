@@ -1,5 +1,6 @@
 package dev.memoji.flashcards.core.data
 
+import dev.memoji.flashcards.core.model.ReminderTime
 import dev.memoji.flashcards.core.model.SessionLength
 import dev.memoji.flashcards.core.model.ThemePreference
 import dev.memoji.flashcards.core.model.UserSettings
@@ -26,4 +27,8 @@ interface SettingsRepository {
     suspend fun setReducedMotion(reducedMotion: Boolean)
 
     suspend fun setHideDayStreak(hideDayStreak: Boolean)
+
+    suspend fun setRemindersEnabled(enabled: Boolean)
+
+    suspend fun setReminderTime(time: ReminderTime)
 }

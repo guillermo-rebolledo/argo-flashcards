@@ -5,10 +5,13 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.memoji.flashcards.core.data.ApiKeyRepository
 import dev.memoji.flashcards.core.data.SettingsRepository
+import dev.memoji.flashcards.core.model.ReminderTime
 import dev.memoji.flashcards.core.model.SessionLength
 import dev.memoji.flashcards.core.model.ThemePreference
 import dev.memoji.flashcards.core.model.UserSettings
+import dev.memoji.flashcards.core.reminders.ReminderNotifier
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -22,7 +25,16 @@ import kotlinx.coroutines.launch
 internal data class SettingsUiState(
     val settings: UserSettings = UserSettings.DEFAULT,
     val hasApiKey: Boolean = false,
-)
+    /**
+     * Assumed until asked. The answer arrives a frame later, and starting at `false` would
+     * have every launch flash "Android is blocking notifications" at a user for whom nothing
+     * is wrong.
+     */
+    val notificationsAllowed: Boolean = true,
+) {
+    val reminderStatus: ReminderStatus
+        get() = reminderStatus(settings.remindersEnabled, notificationsAllowed)
+}
 
 /**
  * The Settings screen has no state of its own: what it shows is what is stored, and a write
@@ -33,13 +45,26 @@ internal data class SettingsUiState(
 internal class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val apiKeyRepository: ApiKeyRepository,
+    private val reminderNotifier: ReminderNotifier,
 ) : ViewModel() {
+
+    /**
+     * Not a flow anyone else owns: Android has nothing to subscribe to here, so the screen
+     * asks again whenever it comes back to the front — which is how a permission changed in
+     * system settings gets noticed.
+     */
+    private val notificationsAllowed = MutableStateFlow(reminderNotifier.notificationsAllowed())
 
     val uiState: StateFlow<SettingsUiState> = combine(
         settingsRepository.observeSettings(),
         apiKeyRepository.observeHasKey(),
-    ) { settings, hasApiKey ->
-        SettingsUiState(settings = settings, hasApiKey = hasApiKey)
+        notificationsAllowed,
+    ) { settings, hasApiKey, notificationsAllowed ->
+        SettingsUiState(
+            settings = settings,
+            hasApiKey = hasApiKey,
+            notificationsAllowed = notificationsAllowed,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
@@ -67,6 +92,27 @@ internal class SettingsViewModel @Inject constructor(
 
     fun setHideDayStreak(hideDayStreak: Boolean) {
         viewModelScope.launch { settingsRepository.setHideDayStreak(hideDayStreak) }
+    }
+
+    /**
+     * Stored whatever the system then does about it. Turning the switch on is the user
+     * answering a question about what they want, and a permission they were refused does not
+     * change that answer — the row says so, and granting it later needs no second visit here.
+     * Nothing is scheduled from here: [dev.memoji.flashcards.core.reminders.ReminderCoordinator]
+     * is watching what gets written.
+     */
+    fun setRemindersEnabled(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setRemindersEnabled(enabled) }
+        refreshNotificationsAllowed()
+    }
+
+    fun setReminderTime(time: ReminderTime) {
+        viewModelScope.launch { settingsRepository.setReminderTime(time) }
+    }
+
+    /** Asked again every time the screen comes back to the front, and after a permission prompt. */
+    fun refreshNotificationsAllowed() {
+        notificationsAllowed.value = reminderNotifier.notificationsAllowed()
     }
 
     /** Blank is not a key: an empty box is nothing entered, not an instruction to clear. */

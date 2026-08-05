@@ -1,6 +1,7 @@
 package dev.memoji.flashcards.core.data
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import dev.memoji.flashcards.core.model.ReminderTime
 import dev.memoji.flashcards.core.model.SessionLength
 import dev.memoji.flashcards.core.model.ThemePreference
 import dev.memoji.flashcards.core.model.UserSettings
@@ -90,6 +91,33 @@ class LocalSettingsRepositoryTest {
         }
     }
 
+    @Test
+    fun `the reminders setting round-trips both ways`() = runTest {
+        withSettings { settings ->
+            settings.setRemindersEnabled(true)
+            assertTrue(settings.observeSettings().first().remindersEnabled)
+
+            settings.setRemindersEnabled(false)
+            assertFalse(settings.observeSettings().first().remindersEnabled)
+        }
+    }
+
+    /** Every minute of the day, because the user picks the minute as well as the hour. */
+    @Test
+    fun `every reminder time round-trips`() = runTest {
+        withSettings { settings ->
+            listOf(
+                ReminderTime(0, 0),
+                ReminderTime(7, 30),
+                ReminderTime(12, 1),
+                ReminderTime(23, 59),
+            ).forEach { time ->
+                settings.setReminderTime(time)
+                assertEquals(time, settings.observeSettings().first().reminderTime)
+            }
+        }
+    }
+
     /** Writing one setting must not quietly reset the ones the user set earlier. */
     @Test
     fun `settings written one at a time all survive together`() = runTest {
@@ -98,6 +126,8 @@ class LocalSettingsRepositoryTest {
             settings.setTheme(ThemePreference.LIGHT)
             settings.setReducedMotion(true)
             settings.setHideDayStreak(true)
+            settings.setRemindersEnabled(true)
+            settings.setReminderTime(ReminderTime(7, 30))
 
             assertEquals(
                 UserSettings(
@@ -105,6 +135,8 @@ class LocalSettingsRepositoryTest {
                     theme = ThemePreference.LIGHT,
                     reducedMotion = true,
                     hideDayStreak = true,
+                    remindersEnabled = true,
+                    reminderTime = ReminderTime(7, 30),
                 ),
                 settings.observeSettings().first(),
             )
@@ -118,6 +150,8 @@ class LocalSettingsRepositoryTest {
             settings.setTheme(ThemePreference.DARK)
             settings.setReducedMotion(true)
             settings.setHideDayStreak(true)
+            settings.setRemindersEnabled(true)
+            settings.setReminderTime(ReminderTime(7, 30))
         }
 
         withSettings { settings ->
@@ -127,6 +161,8 @@ class LocalSettingsRepositoryTest {
                     theme = ThemePreference.DARK,
                     reducedMotion = true,
                     hideDayStreak = true,
+                    remindersEnabled = true,
+                    reminderTime = ReminderTime(7, 30),
                 ),
                 settings.observeSettings().first(),
             )

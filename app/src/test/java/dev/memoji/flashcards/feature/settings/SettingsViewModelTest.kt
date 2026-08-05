@@ -2,8 +2,10 @@ package dev.memoji.flashcards.feature.settings
 
 import dev.memoji.flashcards.core.data.FakeApiKeyRepository
 import dev.memoji.flashcards.core.data.FakeSettingsRepository
+import dev.memoji.flashcards.core.model.ReminderTime
 import dev.memoji.flashcards.core.model.SessionLength
 import dev.memoji.flashcards.core.model.ThemePreference
+import dev.memoji.flashcards.core.reminders.FakeReminderNotifier
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -26,6 +28,7 @@ class SettingsViewModelTest {
 
     private val repository = FakeSettingsRepository()
     private val apiKeyRepository = FakeApiKeyRepository()
+    private val notifier = FakeReminderNotifier()
 
     @Before
     fun useTestDispatcher() {
@@ -40,7 +43,10 @@ class SettingsViewModelTest {
     /** No spinner and no blank rows: an unset setting already has an answer. */
     @Test
     fun `the state starts at the defaults rather than at nothing`() {
-        assertEquals(SettingsUiState(), SettingsViewModel(repository, apiKeyRepository).uiState.value)
+        assertEquals(
+            SettingsUiState(),
+            SettingsViewModel(repository, apiKeyRepository, notifier).uiState.value,
+        )
     }
 
     @Test
@@ -91,6 +97,96 @@ class SettingsViewModelTest {
 
         viewModel.setHideDayStreak(false)
         assertFalse(viewModel.uiState.value.settings.hideDayStreak)
+    }
+
+    @Test
+    fun `reminders are off until the user asks for them`() = runTest {
+        val viewModel = watchedViewModel()
+
+        assertEquals(ReminderStatus.OFF, viewModel.uiState.value.reminderStatus)
+    }
+
+    @Test
+    fun `turning reminders on stores it and shows as on`() = runTest {
+        val viewModel = watchedViewModel()
+
+        viewModel.setRemindersEnabled(true)
+
+        assertTrue(repository.observeSettings().first().remindersEnabled)
+        assertEquals(ReminderStatus.ON, viewModel.uiState.value.reminderStatus)
+    }
+
+    /**
+     * The user asked and Android said no. The answer they gave is kept — the switch reads off
+     * because that is the truth, and the row explains who is refusing.
+     */
+    @Test
+    fun `a denied permission leaves the switch off and the setting standing`() = runTest {
+        notifier.allowed = false
+        val viewModel = watchedViewModel()
+
+        viewModel.setRemindersEnabled(true)
+
+        assertEquals(ReminderStatus.BLOCKED, viewModel.uiState.value.reminderStatus)
+        assertTrue(repository.observeSettings().first().remindersEnabled)
+    }
+
+    /** Granting it later in system settings brings the reminder back without a second ask. */
+    @Test
+    fun `granting the permission afterwards turns the reminder on by itself`() = runTest {
+        notifier.allowed = false
+        val viewModel = watchedViewModel()
+        viewModel.setRemindersEnabled(true)
+
+        notifier.allowed = true
+        viewModel.refreshNotificationsAllowed()
+
+        assertEquals(ReminderStatus.ON, viewModel.uiState.value.reminderStatus)
+    }
+
+    /** A permission taken away while the app was elsewhere is noticed on the way back in. */
+    @Test
+    fun `a revoked permission shows as blocked when the screen comes back`() = runTest {
+        val viewModel = watchedViewModel()
+        viewModel.setRemindersEnabled(true)
+
+        notifier.allowed = false
+        viewModel.refreshNotificationsAllowed()
+
+        assertEquals(ReminderStatus.BLOCKED, viewModel.uiState.value.reminderStatus)
+    }
+
+    @Test
+    fun `turning reminders off stores it`() = runTest {
+        val viewModel = watchedViewModel()
+        viewModel.setRemindersEnabled(true)
+
+        viewModel.setRemindersEnabled(false)
+
+        assertFalse(repository.observeSettings().first().remindersEnabled)
+        assertEquals(ReminderStatus.OFF, viewModel.uiState.value.reminderStatus)
+    }
+
+    @Test
+    fun `a chosen reminder time is stored`() = runTest {
+        val viewModel = watchedViewModel()
+
+        viewModel.setReminderTime(ReminderTime(7, 30))
+
+        assertEquals(ReminderTime(7, 30), repository.observeSettings().first().reminderTime)
+    }
+
+    /** Turning reminders off and on again comes back to the hour the user picked. */
+    @Test
+    fun `the reminder time outlives reminders being turned off`() = runTest {
+        val viewModel = watchedViewModel()
+        viewModel.setReminderTime(ReminderTime(7, 30))
+        viewModel.setRemindersEnabled(true)
+
+        viewModel.setRemindersEnabled(false)
+        viewModel.setRemindersEnabled(true)
+
+        assertEquals(ReminderTime(7, 30), viewModel.uiState.value.settings.reminderTime)
     }
 
     /**
@@ -151,7 +247,7 @@ class SettingsViewModelTest {
      * needs a collector. `backgroundScope` cancels it when the test ends.
      */
     private fun TestScope.watchedViewModel() =
-        SettingsViewModel(repository, apiKeyRepository).also { viewModel ->
+        SettingsViewModel(repository, apiKeyRepository, notifier).also { viewModel ->
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
                 viewModel.uiState.collect { }
             }

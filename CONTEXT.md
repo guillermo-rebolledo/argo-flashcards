@@ -71,6 +71,18 @@ _Avoid_: New, unlearned, in progress, weak
 A Card graded `Again` during a Session. Listed on the results screen as worth another look.
 _Avoid_: Failure, wrong answer, lapse
 
+### Reminders
+
+**Reminder**:
+One notification a day, opted into. Carries no counts and names nothing to catch up on —
+there is no backlog for it to report. Tapping it opens the app.
+_Avoid_: Alert, push, notification on its own
+
+**Reminder time**:
+The time of day a Reminder is aimed at. Aimed at, not promised for: delivery is deliberately
+approximate so the app never asks for exact-alarm privileges.
+_Avoid_: Alarm, schedule, due time
+
 ### Progress
 
 **Session log**:

@@ -24,6 +24,16 @@ data class UserSettings(
      * to become another thing keeping score.
      */
     val hideDayStreak: Boolean = false,
+    /**
+     * Off until the user asks for it. Nothing about this app needs the user back tomorrow —
+     * per ADR 0001 nothing accumulates while it is closed — so the nudge is opted into.
+     */
+    val remindersEnabled: Boolean = false,
+    /**
+     * Kept whether or not [remindersEnabled] is on, so turning reminders off and on again
+     * comes back to the time the user picked rather than to the app's guess.
+     */
+    val reminderTime: ReminderTime = ReminderTime.DEFAULT,
 ) {
     companion object {
         val DEFAULT = UserSettings()

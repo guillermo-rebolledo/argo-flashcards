@@ -4,6 +4,7 @@ import dev.memoji.flashcards.core.model.Card
 import dev.memoji.flashcards.core.model.Deck
 import dev.memoji.flashcards.core.model.DeckSummary
 import dev.memoji.flashcards.core.model.Grade
+import dev.memoji.flashcards.core.model.ReminderTime
 import dev.memoji.flashcards.core.model.Session
 import dev.memoji.flashcards.core.model.SessionLength
 import dev.memoji.flashcards.core.model.ThemePreference
@@ -202,5 +203,13 @@ internal class FakeSettingsRepository : SettingsRepository {
 
     override suspend fun setHideDayStreak(hideDayStreak: Boolean) {
         settings.value = settings.value.copy(hideDayStreak = hideDayStreak)
+    }
+
+    override suspend fun setRemindersEnabled(enabled: Boolean) {
+        settings.value = settings.value.copy(remindersEnabled = enabled)
+    }
+
+    override suspend fun setReminderTime(time: ReminderTime) {
+        settings.value = settings.value.copy(reminderTime = time)
     }
 }
