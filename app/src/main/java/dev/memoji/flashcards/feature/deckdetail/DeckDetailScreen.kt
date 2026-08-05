@@ -54,6 +54,7 @@ import dev.memoji.flashcards.ui.component.FabClearance
 fun DeckDetailScreen(
     contentPadding: PaddingValues,
     onStartSession: (Long) -> Unit,
+    onGenerateCards: () -> Unit,
     onBack: () -> Unit,
 ) {
     val viewModel: DeckDetailViewModel = hiltViewModel()
@@ -61,6 +62,7 @@ fun DeckDetailScreen(
     DeckDetailScreen(
         uiState = uiState,
         onStartSession = onStartSession,
+        onGenerateCards = onGenerateCards,
         onBack = onBack,
         onSetFilter = viewModel::setFilter,
         onAddCard = viewModel::addCard,
@@ -76,6 +78,7 @@ fun DeckDetailScreen(
 internal fun DeckDetailScreen(
     uiState: DeckDetailUiState,
     onStartSession: (Long) -> Unit,
+    onGenerateCards: () -> Unit,
     onBack: () -> Unit,
     onSetFilter: (CardFilter) -> Unit,
     onAddCard: (front: String, back: String) -> Unit,
@@ -156,12 +159,11 @@ internal fun DeckDetailScreen(
 
         // Shown while loading too: an empty Deck is the screen this most often lands on, and
         // the way out of it must not arrive a frame after the screen does. Not shown once the
-        // Deck is gone — there would be nothing to write the Card into.
+        // Deck is gone — there would be nothing to write the Cards into.
         if (uiState !is DeckDetailUiState.DeckGone) {
-            ExtendedFloatingActionButton(
-                onClick = { adding = true },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.cards_add_card)) },
+            AddCardsButton(
+                onGenerate = onGenerateCards,
+                onWrite = { adding = true },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(
@@ -234,6 +236,44 @@ internal fun DeckDetailScreen(
             },
             onDismiss = { deletingDeck = false },
         )
+    }
+}
+
+/**
+ * The two ways Cards get into a Deck that already exists, in one place: generated from
+ * something pasted, or written here by hand. Both are offered from the same button because
+ * both answer the same thought — this Deck needs more in it.
+ */
+@Composable
+private fun AddCardsButton(
+    onGenerate: () -> Unit,
+    onWrite: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var menuOpen by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        ExtendedFloatingActionButton(
+            onClick = { menuOpen = true },
+            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+            text = { Text(stringResource(R.string.decks_add_cards)) },
+        )
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.generate_action)) },
+                onClick = {
+                    menuOpen = false
+                    onGenerate()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.cards_write_a_card)) },
+                onClick = {
+                    menuOpen = false
+                    onWrite()
+                },
+            )
+        }
     }
 }
 

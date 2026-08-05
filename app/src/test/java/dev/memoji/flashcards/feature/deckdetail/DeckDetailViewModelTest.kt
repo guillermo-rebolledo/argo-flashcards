@@ -199,6 +199,22 @@ class DeckDetailViewModelTest {
         assertEquals(1, viewModel.ready().masteredCount)
     }
 
+    /**
+     * Cards added from the Add Cards flow land in the Deck this screen is watching, so the
+     * summary is simply counting more of them — nothing here has to be told to refresh.
+     */
+    @Test
+    fun `the mastery summary follows Cards added from elsewhere`() = runTest {
+        val viewModel = watchedViewModel()
+        viewModel.addCard("O(1)", "Constant time.")
+        cardRepository.master(viewModel.ids().single())
+
+        cardRepository.createCard(deckId, "O(n)", "Linear time.")
+
+        assertEquals(2, viewModel.ready().cardCount)
+        assertEquals(1, viewModel.ready().masteredCount)
+    }
+
     @Test
     fun `renaming the Deck shows the new name`() = runTest {
         val viewModel = watchedViewModel()
