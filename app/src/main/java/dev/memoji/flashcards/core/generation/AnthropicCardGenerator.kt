@@ -76,7 +76,7 @@ internal class AnthropicCardGenerator(
     private fun readResponse(response: Response): GenerationResult {
         if (!response.isSuccessful) return GenerationResult.Failed(statusFailure(response.code))
 
-        val message = withoutParseFailures<MessageResponse>(response.body.string()) ?: return unexpected
+        val message = decodeOrNull<MessageResponse>(response.body.string()) ?: return unexpected
         return when (message.stopReason) {
             // A refusal is an outcome, not an error — it comes back as a 200 like any answer.
             STOP_REFUSAL -> GenerationResult.Failed(GenerationFailure.DECLINED)
@@ -89,7 +89,7 @@ internal class AnthropicCardGenerator(
 
     private fun MessageResponse.asResult(): GenerationResult {
         val json = content.firstOrNull { it.type == TEXT_BLOCK }?.text ?: return unexpected
-        val deck = withoutParseFailures<GeneratedDeckPayload>(json) ?: return unexpected
+        val deck = decodeOrNull<GeneratedDeckPayload>(json) ?: return unexpected
 
         val cards = deck.cards
             .map { GeneratedCard(front = it.front.trim(), back = it.back.trim()) }
@@ -104,7 +104,7 @@ internal class AnthropicCardGenerator(
      * The schema makes a malformed body unreachable through the API. This is here so that a
      * captive portal answering 200 with a login page cannot take the app down with it.
      */
-    private inline fun <reified T> withoutParseFailures(body: String?): T? = try {
+    private inline fun <reified T> decodeOrNull(body: String?): T? = try {
         body?.let { json.decodeFromString<T>(it) }
     } catch (e: SerializationException) {
         null
@@ -126,8 +126,12 @@ internal class AnthropicCardGenerator(
         const val ANTHROPIC_VERSION = "2023-06-01"
         const val MODEL = "claude-opus-5"
 
-        /** Room for the model to think and still write eight Cards without being cut off. */
-        const val MAX_TOKENS = 8_000
+        /**
+         * Thinking and the answer come out of the same budget, and the model thinks by
+         * default. Eight Cards are a few hundred tokens; the rest of this is headroom, so a
+         * long paste is not cut off part-way and reported as material that produced nothing.
+         */
+        const val MAX_TOKENS = 32_000
 
         /**
          * Turning a page of notes into eight Cards is close to what the model does unprompted,

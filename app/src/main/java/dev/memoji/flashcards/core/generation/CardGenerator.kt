@@ -63,7 +63,10 @@ enum class GenerationFailure {
      */
     DECLINED,
 
-    /** The request worked and produced nothing usable — too little to work with, or a refusal. */
+    /**
+     * The request worked and produced no Card worth keeping — material too short, or too
+     * abstract to state in single sentences. A refusal is [DECLINED], not this.
+     */
     NO_CARDS,
 
     /**

@@ -12,9 +12,7 @@ import dev.memoji.flashcards.core.generation.GenerationFailure
 internal data class ProposedCard(val card: GeneratedCard, val kept: Boolean = true)
 
 /**
- * What each failure says and what it offers to do about it. The two live together so that a
- * new failure cannot be added without answering both questions, and so the screen has one
- * `when` instead of three.
+ * What a failure offers to do about itself.
  */
 internal enum class FailureAction {
 
@@ -26,35 +24,37 @@ internal enum class FailureAction {
 
     /** Nothing to retry with — the text itself is what has to change. */
     NONE,
-    ;
-
-    companion object {
-
-        fun of(failure: GenerationFailure) = when (failure) {
-            GenerationFailure.NO_KEY_SET -> OPEN_SETTINGS
-            GenerationFailure.INVALID_KEY -> OPEN_SETTINGS
-            GenerationFailure.RATE_LIMITED,
-            GenerationFailure.OFFLINE,
-            GenerationFailure.TIMEOUT,
-            GenerationFailure.UNEXPECTED,
-            -> TRY_AGAIN
-            GenerationFailure.DECLINED, GenerationFailure.NO_CARDS -> NONE
-        }
-    }
 }
 
-/** Each failure says its own thing. A shared "something went wrong" would help nobody. */
-@get:StringRes
-internal val GenerationFailure.messageRes: Int
+/**
+ * What a failure says and what it offers to do about it. Both answers come out of one `when`,
+ * so a failure added later cannot be given a message and left without a way forward.
+ *
+ * It lives here rather than beside [GenerationFailure] because the wording is the screen's:
+ * nothing under `core` knows about string resources.
+ */
+internal data class FailureCopy(@param:StringRes val messageRes: Int, val action: FailureAction)
+
+internal val GenerationFailure.copy: FailureCopy
     get() = when (this) {
-        GenerationFailure.NO_KEY_SET -> R.string.generate_error_no_key
-        GenerationFailure.INVALID_KEY -> R.string.generate_error_invalid_key
-        GenerationFailure.RATE_LIMITED -> R.string.generate_error_rate_limited
-        GenerationFailure.OFFLINE -> R.string.generate_error_offline
-        GenerationFailure.TIMEOUT -> R.string.generate_error_timeout
-        GenerationFailure.DECLINED -> R.string.generate_error_declined
-        GenerationFailure.NO_CARDS -> R.string.generate_error_no_cards
-        GenerationFailure.UNEXPECTED -> R.string.generate_error_unexpected
+        // The only one that is not about this attempt at all.
+        GenerationFailure.NO_KEY_SET ->
+            FailureCopy(R.string.generate_error_no_key, FailureAction.OPEN_SETTINGS)
+        GenerationFailure.INVALID_KEY ->
+            FailureCopy(R.string.generate_error_invalid_key, FailureAction.OPEN_SETTINGS)
+        GenerationFailure.RATE_LIMITED ->
+            FailureCopy(R.string.generate_error_rate_limited, FailureAction.TRY_AGAIN)
+        GenerationFailure.OFFLINE ->
+            FailureCopy(R.string.generate_error_offline, FailureAction.TRY_AGAIN)
+        GenerationFailure.TIMEOUT ->
+            FailureCopy(R.string.generate_error_timeout, FailureAction.TRY_AGAIN)
+        GenerationFailure.UNEXPECTED ->
+            FailureCopy(R.string.generate_error_unexpected, FailureAction.TRY_AGAIN)
+        // Nothing to retry with — the material itself is what has to change.
+        GenerationFailure.DECLINED ->
+            FailureCopy(R.string.generate_error_declined, FailureAction.NONE)
+        GenerationFailure.NO_CARDS ->
+            FailureCopy(R.string.generate_error_no_cards, FailureAction.NONE)
     }
 
 internal sealed interface GenerateUiState {
@@ -73,17 +73,20 @@ internal sealed interface GenerateUiState {
 
         val canGenerate: Boolean get() = text.isNotBlank()
 
-        val failureAction: FailureAction? get() = failure?.let(FailureAction::of)
+        val failureCopy: FailureCopy? get() = failure?.copy
     }
 
     /** Nothing for the user to do, which the screen says out loud. */
     data object Busy : GenerateUiState
 
     /**
-     * The proposed Cards, held in memory. Unticking one drops it here and nowhere else — an
-     * unkept Card is never written.
+     * The proposed Cards, held in memory, waiting to be Kept. Unticking one drops it here and
+     * nowhere else — an unkept Card is never written.
+     *
+     * Not called Review: in this app that word is the phase of a Session where Cards are shown
+     * and Graded, and it means only that.
      */
-    data class Review(
+    data class Proposed(
         val deckName: String,
         val cards: List<ProposedCard>,
         /** Kept so that backing out of a Generation does not mean pasting it all again. */

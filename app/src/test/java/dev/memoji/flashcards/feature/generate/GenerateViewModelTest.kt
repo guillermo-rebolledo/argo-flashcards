@@ -77,10 +77,10 @@ class GenerateViewModelTest {
 
         viewModel.generate()
 
-        val review = viewModel.review()
-        assertEquals("Big-O notation", review.deckName)
-        assertEquals(listOf("O(1)", "O(n)", "O(log n)"), review.cards.map { it.card.front })
-        assertEquals(3, review.keptCount)
+        val proposed = viewModel.proposed()
+        assertEquals("Big-O notation", proposed.deckName)
+        assertEquals(listOf("O(1)", "O(n)", "O(log n)"), proposed.cards.map { it.card.front })
+        assertEquals(3, proposed.keptCount)
     }
 
     @Test
@@ -104,7 +104,7 @@ class GenerateViewModelTest {
         assertEquals(GenerateUiState.Busy, viewModel.uiState.value)
 
         generator.finish()
-        assertTrue(viewModel.uiState.value is GenerateUiState.Review)
+        assertTrue(viewModel.uiState.value is GenerateUiState.Proposed)
     }
 
     /**
@@ -122,7 +122,7 @@ class GenerateViewModelTest {
         assertEquals(GenerateUiState.Busy, viewModel.uiState.value)
         generator.finish()
 
-        assertTrue(viewModel.uiState.value is GenerateUiState.Review)
+        assertTrue(viewModel.uiState.value is GenerateUiState.Proposed)
         assertEquals(1, generator.generateCount)
     }
 
@@ -144,17 +144,17 @@ class GenerateViewModelTest {
 
         viewModel.setKept(1, false)
 
-        assertEquals(2, viewModel.review().keptCount)
-        assertEquals(3, viewModel.review().cards.size)
+        assertEquals(2, viewModel.proposed().keptCount)
+        assertEquals(3, viewModel.proposed().cards.size)
     }
 
     @Test
     fun `unticking every Card leaves nothing to save`() = runTest {
         val viewModel = generatedViewModel()
 
-        viewModel.review().cards.indices.forEach { viewModel.setKept(it, false) }
+        viewModel.proposed().cards.indices.forEach { viewModel.setKept(it, false) }
 
-        assertFalse(viewModel.review().canSave)
+        assertFalse(viewModel.proposed().canSave)
     }
 
     @Test
@@ -174,7 +174,7 @@ class GenerateViewModelTest {
 
         viewModel.setDeckName("  ")
 
-        assertFalse(viewModel.review().canSave)
+        assertFalse(viewModel.proposed().canSave)
         viewModel.save()
         assertEquals(emptyList<String>(), deckRepository.deckNames())
     }
@@ -274,7 +274,7 @@ class GenerateViewModelTest {
 
         viewModel.generate()
 
-        assertEquals(FailureAction.OPEN_SETTINGS, viewModel.entry().failureAction)
+        assertEquals(FailureAction.OPEN_SETTINGS, viewModel.entry().failureCopy?.action)
     }
 
     @Test
@@ -285,7 +285,7 @@ class GenerateViewModelTest {
 
         viewModel.generate()
 
-        assertEquals(FailureAction.OPEN_SETTINGS, viewModel.entry().failureAction)
+        assertEquals(FailureAction.OPEN_SETTINGS, viewModel.entry().failureCopy?.action)
     }
 
     @Test
@@ -296,7 +296,7 @@ class GenerateViewModelTest {
 
         viewModel.generate()
 
-        assertEquals(FailureAction.TRY_AGAIN, viewModel.entry().failureAction)
+        assertEquals(FailureAction.TRY_AGAIN, viewModel.entry().failureCopy?.action)
     }
 
     /** Nothing to retry with: the material itself is what has to change. */
@@ -308,7 +308,7 @@ class GenerateViewModelTest {
 
         viewModel.generate()
 
-        assertEquals(FailureAction.NONE, viewModel.entry().failureAction)
+        assertEquals(FailureAction.NONE, viewModel.entry().failureCopy?.action)
     }
 
     @Test
@@ -330,7 +330,7 @@ class GenerateViewModelTest {
         viewModel.setText("Big-O notation.")
         viewModel.generate()
 
-        viewModel.backToEntry(viewModel.review().sourceText)
+        viewModel.backToEntry(viewModel.proposed().sourceText)
 
         assertEquals("Big-O notation.", viewModel.entry().text)
     }
@@ -372,7 +372,7 @@ class GenerateViewModelTest {
     }
 
     private fun GenerateViewModel.entry() = uiState.value as GenerateUiState.Entry
-    private fun GenerateViewModel.review() = uiState.value as GenerateUiState.Review
+    private fun GenerateViewModel.proposed() = uiState.value as GenerateUiState.Proposed
 
     /**
      * What leaving the flow does: the ViewModel is cleared and its scope cancelled. There is

@@ -59,7 +59,7 @@ fun GenerateScreen(
     // Saving, or writing a Deck by hand, both end the same way: in the Deck that was made.
     LaunchedEffect(savedDeckId) {
         savedDeckId?.let {
-            viewModel.openedDeck()
+            viewModel.deckOpened()
             onOpenDeck(it)
         }
     }
@@ -100,13 +100,31 @@ internal fun GenerateScreen(
             .fillMaxSize()
             .padding(top = contentPadding.calculateTopPadding()),
     ) {
+        // Pasting and waiting are the same screen mid-thought, so they keep the same header:
+        // only the step that has something to go back to gets a back arrow.
+        if (uiState is GenerateUiState.Proposed) {
+            Header(
+                title = stringResource(R.string.generate_review_title),
+                icon = {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = stringResource(R.string.action_go_back),
+                    )
+                },
+                // Back goes to the box rather than out of the flow, so a Generation the user
+                // did not like is one tap from being tried again.
+                onNavigate = { onBackToEntry(uiState.sourceText) },
+            )
+        } else {
+            Header(
+                title = stringResource(R.string.generate_title),
+                icon = { Icon(Icons.Filled.Close, stringResource(R.string.action_close)) },
+                onNavigate = onClose,
+            )
+        }
+
         when (uiState) {
             is GenerateUiState.Entry -> {
-                Header(
-                    title = stringResource(R.string.generate_title),
-                    icon = { Icon(Icons.Filled.Close, stringResource(R.string.action_close)) },
-                    onNavigate = onClose,
-                )
                 SourceEntry(
                     uiState = uiState,
                     onSetText = onSetText,
@@ -118,29 +136,10 @@ internal fun GenerateScreen(
                 )
             }
 
-            GenerateUiState.Busy -> {
-                Header(
-                    title = stringResource(R.string.generate_title),
-                    icon = { Icon(Icons.Filled.Close, stringResource(R.string.action_close)) },
-                    onNavigate = onClose,
-                )
-                Busy(modifier = Modifier.weight(1f))
-            }
+            GenerateUiState.Busy -> Busy(modifier = Modifier.weight(1f))
 
-            is GenerateUiState.Review -> {
-                Header(
-                    title = stringResource(R.string.generate_review_title),
-                    icon = {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.action_go_back),
-                        )
-                    },
-                    // Back goes to the box rather than out of the flow, so a Generation the
-                    // user did not like is one tap from being tried again.
-                    onNavigate = { onBackToEntry(uiState.sourceText) },
-                )
-                Review(
+            is GenerateUiState.Proposed -> {
+                ProposedCards(
                     uiState = uiState,
                     onSetKept = onSetKept,
                     onSetDeckName = onSetDeckName,
@@ -233,10 +232,9 @@ private fun SourceEntry(
             )
         }
 
-        uiState.failure?.let { failure ->
+        uiState.failureCopy?.let { copy ->
             GenerationFailureMessage(
-                message = stringResource(failure.messageRes),
-                action = uiState.failureAction,
+                copy = copy,
                 onOpenSettings = onOpenSettings,
                 onTryAgain = onGenerate,
             )
@@ -271,8 +269,7 @@ private fun SourceEntry(
  */
 @Composable
 private fun GenerationFailureMessage(
-    message: String,
-    action: FailureAction?,
+    copy: FailureCopy,
     onOpenSettings: () -> Unit,
     onTryAgain: () -> Unit,
 ) {
@@ -285,15 +282,18 @@ private fun GenerationFailureMessage(
             .padding(horizontal = 20.dp, vertical = 8.dp),
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = message, style = MaterialTheme.typography.bodyMedium)
-            when (action) {
+            Text(
+                text = stringResource(copy.messageRes),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            when (copy.action) {
                 FailureAction.OPEN_SETTINGS -> TextButton(onClick = onOpenSettings) {
                     Text(stringResource(R.string.generate_open_settings))
                 }
                 FailureAction.TRY_AGAIN -> TextButton(onClick = onTryAgain) {
                     Text(stringResource(R.string.generate_try_again))
                 }
-                FailureAction.NONE, null -> Unit
+                FailureAction.NONE -> Unit
             }
         }
     }
@@ -322,8 +322,8 @@ private fun Busy(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun Review(
-    uiState: GenerateUiState.Review,
+private fun ProposedCards(
+    uiState: GenerateUiState.Proposed,
     onSetKept: (Int, Boolean) -> Unit,
     onSetDeckName: (String) -> Unit,
     onSave: () -> Unit,

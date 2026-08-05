@@ -51,7 +51,7 @@ internal class GenerateViewModel @Inject constructor(
         _uiState.value = GenerateUiState.Busy
         viewModelScope.launch {
             when (val result = cardGenerator.generate(Source.PastedText(entry.text))) {
-                is GenerationResult.Generated -> _uiState.value = GenerateUiState.Review(
+                is GenerationResult.Generated -> _uiState.value = GenerateUiState.Proposed(
                     deckName = result.deckName,
                     cards = result.cards.map { ProposedCard(it) },
                     sourceText = entry.text,
@@ -66,7 +66,7 @@ internal class GenerateViewModel @Inject constructor(
 
     fun setKept(index: Int, kept: Boolean) {
         _uiState.update { state ->
-            val review = state as? GenerateUiState.Review ?: return@update state
+            val review = state as? GenerateUiState.Proposed ?: return@update state
             if (index !in review.cards.indices) return@update state
             review.copy(
                 cards = review.cards.mapIndexed { i, card ->
@@ -78,7 +78,7 @@ internal class GenerateViewModel @Inject constructor(
 
     fun setDeckName(name: String) {
         _uiState.update { state ->
-            (state as? GenerateUiState.Review)?.copy(deckName = name) ?: state
+            (state as? GenerateUiState.Proposed)?.copy(deckName = name) ?: state
         }
     }
 
@@ -92,7 +92,7 @@ internal class GenerateViewModel @Inject constructor(
      * here — they are never written, and the Deck the user opens holds only what they ticked.
      */
     fun save() {
-        val review = _uiState.value as? GenerateUiState.Review ?: return
+        val review = _uiState.value as? GenerateUiState.Proposed ?: return
         if (!review.canSave) return
 
         _uiState.value = review.copy(saving = true)
@@ -111,7 +111,7 @@ internal class GenerateViewModel @Inject constructor(
         viewModelScope.launch { _savedDeckId.value = deckRepository.createDeck(name) }
     }
 
-    fun openedDeck() {
+    fun deckOpened() {
         _savedDeckId.value = null
     }
 }
