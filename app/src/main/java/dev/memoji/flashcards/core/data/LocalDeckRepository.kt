@@ -21,6 +21,9 @@ internal class LocalDeckRepository @Inject constructor(
     override fun observeDecks(): Flow<List<Deck>> =
         deckDao.observeAll().map { entities -> entities.map(DeckEntity::asDeck) }
 
+    override fun observeDeck(id: Long): Flow<Deck?> =
+        deckDao.observeById(id).map { entity -> entity?.asDeck() }
+
     override suspend fun createDeck(name: String): Long =
         deckDao.insert(DeckEntity(name = name.trim(), createdAt = clock.millis()))
 

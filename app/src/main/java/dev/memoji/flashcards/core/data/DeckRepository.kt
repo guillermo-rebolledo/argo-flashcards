@@ -12,6 +12,9 @@ interface DeckRepository {
     /** Every Deck, newest first, re-emitted whenever any of them changes. */
     fun observeDecks(): Flow<List<Deck>>
 
+    /** One Deck, or null once it is deleted. */
+    fun observeDeck(id: Long): Flow<Deck?>
+
     /** Creates a Deck named [name] with surrounding whitespace trimmed, and returns its id. */
     suspend fun createDeck(name: String): Long
 

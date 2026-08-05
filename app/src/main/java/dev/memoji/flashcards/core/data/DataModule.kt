@@ -13,4 +13,8 @@ internal abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindDeckRepository(repository: LocalDeckRepository): DeckRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCardRepository(repository: LocalCardRepository): CardRepository
 }

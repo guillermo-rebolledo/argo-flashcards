@@ -21,10 +21,13 @@ internal object DatabaseModule {
             context,
             FlashcardsDatabase::class.java,
             FlashcardsDatabase.DATABASE_NAME,
-        ).build()
+        ).addMigrations(*FlashcardsDatabase.MIGRATIONS).build()
 
     @Provides
     fun provideDeckDao(database: FlashcardsDatabase): DeckDao = database.deckDao()
+
+    @Provides
+    fun provideCardDao(database: FlashcardsDatabase): CardDao = database.cardDao()
 
     /** Injected rather than read statically so tests can decide what "now" is. */
     @Provides

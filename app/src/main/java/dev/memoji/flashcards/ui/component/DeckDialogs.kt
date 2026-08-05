@@ -1,4 +1,4 @@
-package dev.memoji.flashcards.feature.decks
+package dev.memoji.flashcards.ui.component
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
@@ -86,7 +86,7 @@ internal fun DeleteDeckDialog(
         title = { Text(stringResource(R.string.decks_delete_title, deckName)) },
         text = { Text(stringResource(R.string.decks_delete_body)) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text(stringResource(R.string.decks_delete)) }
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_delete)) }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
