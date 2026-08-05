@@ -82,5 +82,18 @@
     <string name="decks_your_decks">Your Decks</string>
 
     <string name="placeholder_progress">Your streak and how much of each Deck you have Mastered will show up here.</string>
-    <string name="placeholder_settings">Your API key, Session length, reminders and theme will be set here.</string>
+
+    <string name="settings_focus">Focus</string>
+    <string name="settings_reduced_motion">Reduced motion</string>
+    <string name="settings_reduced_motion_body">Cards change without sliding or rotating</string>
+    <!-- Shown instead of the line above when the toggle is on but not because it was tapped. -->
+    <string name="settings_reduced_motion_system">Already on in your device\'s accessibility settings</string>
+    <string name="settings_session_length">Session length</string>
+    <!-- Why there are three chips and not a number field: the end has to stay in sight. -->
+    <string name="settings_session_length_body">Every Session ends where you can see it.</string>
+    <!-- A chip: "5 Cards". Not a plural — the smallest Session the app offers is 3. -->
+    <string name="settings_session_length_option" tools:ignore="PluralsCandidate">%1$d Cards</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_dark_theme">Dark theme</string>
+    <string name="settings_dark_theme_body">Follows your device until you set it here</string>
 </resources>

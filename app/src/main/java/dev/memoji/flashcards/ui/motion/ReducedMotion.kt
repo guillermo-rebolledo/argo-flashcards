@@ -9,7 +9,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalContext
+
+/**
+ * Whether this app is animating, as decided once at the root and read by every screen below
+ * it. A screen asks whether to animate; it has no business knowing that the answer comes from
+ * an Accessibility setting, a preference, or both.
+ *
+ * Defaults to animating, so a preview or a test that provides nothing still renders.
+ */
+val LocalReducedMotion = staticCompositionLocalOf { false }
+
+/**
+ * The rule the two sources combine by. The system setting is not something this app may
+ * overrule: a user who told Android to remove animations has already answered, and the
+ * in-app toggle only exists to turn motion off for someone the system setting has not.
+ */
+fun reducedMotion(systemSetting: Boolean, userOverride: Boolean): Boolean =
+    systemSetting || userOverride
 
 /**
  * Whether the user has asked the system to remove animations. Motion that is pleasant to most
@@ -19,7 +37,7 @@ import androidx.compose.ui.platform.LocalContext
  * Re-read while the screen is up, so turning it on takes effect without restarting the app.
  */
 @Composable
-fun rememberReducedMotion(): Boolean {
+fun rememberSystemReducedMotion(): Boolean {
     val resolver = LocalContext.current.contentResolver
     // Read once, then only when it changes: this crosses to the settings provider, and a Card
     // being dragged recomposes every frame.

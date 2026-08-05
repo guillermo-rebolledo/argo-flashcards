@@ -54,7 +54,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.memoji.flashcards.R
 import dev.memoji.flashcards.core.model.Grade
 import dev.memoji.flashcards.ui.component.EmptyState
-import dev.memoji.flashcards.ui.motion.rememberReducedMotion
+import dev.memoji.flashcards.ui.motion.LocalReducedMotion
 
 @Composable
 fun SessionScreen(contentPadding: PaddingValues, onFinish: () -> Unit) {
@@ -115,7 +115,7 @@ private fun ColumnScope.Review(
     onGrade: (Grade) -> Unit,
     onEnd: () -> Unit,
 ) {
-    val reducedMotion = rememberReducedMotion()
+    val reducedMotion = LocalReducedMotion.current
     // The swipe belongs to the Card in hand and to no other: keying on it drops the drag, the
     // hints, and the "already graded" latch the moment the next Card arrives.
     val swipe = key(uiState.card.id) {
