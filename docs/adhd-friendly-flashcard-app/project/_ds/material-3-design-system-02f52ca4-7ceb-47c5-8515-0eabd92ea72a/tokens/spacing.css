@@ -1,0 +1,12 @@
+/* Spacing. The .fig defines no spacing variables; the kit's layouts sit on a 4dp grid
+   (8/12/16/24 dominate). These are the steps observed in the source frames. */
+:root{
+  --m3-space-1:4px;--m3-space-2:8px;--m3-space-3:12px;--m3-space-4:16px;
+  --m3-space-5:20px;--m3-space-6:24px;--m3-space-7:28px;--m3-space-8:32px;
+  --m3-space-10:40px;--m3-space-12:48px;--m3-space-14:56px;--m3-space-16:64px;
+  /* Layout margins from the kit's window size classes */
+  --m3-margin-compact:16px;--m3-margin-medium:24px;--m3-margin-expanded:24px;
+  --m3-pane-gap:24px;
+  /* Minimum touch target */
+  --m3-touch-target:48px;
+}

@@ -1,0 +1,12 @@
+/* Webfonts.
+   The kit's Font theme variables name Roboto as both Brand and Plain font; Roboto and
+   Roboto Mono are loaded from Google Fonts (no binaries shipped with the .fig).
+   Google Sans / Google Sans Code / Flow Circular were supplied by the user as TTFs
+   and are self-hosted below. Google Sans Text (used for the kit's own annotations)
+   is not available; annotation UI falls back to Google Sans. */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap');
+
+@font-face{font-family:"Google Sans";src:url("../assets/fonts/GoogleSans-Variable.ttf") format("truetype-variations");font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:"Google Sans";src:url("../assets/fonts/GoogleSans-Italic-Variable.ttf") format("truetype-variations");font-weight:100 900;font-style:italic;font-display:swap}
+@font-face{font-family:"Google Sans Code";src:url("../assets/fonts/GoogleSansCode-Variable.ttf") format("truetype-variations");font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:"Flow Circular";src:url("../assets/fonts/FlowCircular-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}

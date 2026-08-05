@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/material-3-design-system-02f52ca4-7ceb-47c5-8515-0eabd92ea72a/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/material-3-design-system-02f52ca4-7ceb-47c5-8515-0eabd92ea72a/tokens/fig-tokens.css">
+<link rel="stylesheet" href="_ds/material-3-design-system-02f52ca4-7ceb-47c5-8515-0eabd92ea72a/tokens/aliases.css">
+<link rel="stylesheet" href="_ds/material-3-design-system-02f52ca4-7ceb-47c5-8515-0eabd92ea72a/tokens/typography.css">
+<link rel="stylesheet" href="_ds/material-3-design-system-02f52ca4-7ceb-47c5-8515-0eabd92ea72a/tokens/elevation.css">
+<link rel="stylesheet" href="_ds/material-3-design-system-02f52ca4-7ceb-47c5-8515-0eabd92ea72a/tokens/motion.css">
+<link rel="stylesheet" href="_ds/material-3-design-system-02f52ca4-7ceb-47c5-8515-0eabd92ea72a/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/material-3-design-system-02f52ca4-7ceb-47c5-8515-0eabd92ea72a/components/m3-components.css">
+<link rel="stylesheet" href="_ds/material-3-design-system-02f52ca4-7ceb-47c5-8515-0eabd92ea72a/styles.css">
+<script src="_ds/material-3-design-system-02f52ca4-7ceb-47c5-8515-0eabd92ea72a/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--m3-surface-dim);font-family:var(--m3-font-plain)}
+a{color:var(--m3-primary)}
+a:hover{color:var(--m3-on-primary-container)}
+[data-om-starter="android-frame"] *{scrollbar-width:thin;scrollbar-color:var(--m3-outline-variant) transparent}
+</style>
+</helmet>
+<div style="display:flex;justify-content:center;align-items:flex-start;padding:32px 16px;min-height:100vh;box-sizing:border-box">
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" dark="{{ isDark }}" hint-size="428px,908px">
+<div style="min-height:100%;display:flex;flex-direction:column;position:relative;background:var(--m3-surface);color:var(--m3-on-surface)">
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;flex:1">
+<div style="display:flex;align-items:center;gap:4px;padding:12px 8px 4px 16px">
+<div class="m3-headline-small" style="flex:1;min-width:0">Decks</div>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.IconButton" label="Toggle theme" onClick="{{ toggleTheme }}" hint-size="40px,40px"><x-import component-from-global-scope="Material3DesignSystem_02f52c.Icon" name="{{ themeIcon }}" hint-size="24px,24px"></x-import></x-import>
+</div>
+<div style="margin:8px 16px 0;padding:20px;border-radius:28px;background:var(--m3-primary-container);color:var(--m3-on-primary-container);display:flex;flex-direction:column;gap:10px">
+<div class="m3-label-large">Up next</div>
+<div class="m3-headline-medium" style="text-wrap:pretty">Big-O notation</div>
+<div class="m3-body-medium">{{ sessionSummary }}</div>
+<div style="padding:6px 0 2px"><x-import component-from-global-scope="Material3DesignSystem_02f52c.LinearProgress" value="{{ deckProgress }}" hint-size="100%,12px"></x-import></div>
+<div style="display:flex;gap:8px;align-items:center">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="filled" size="s" onClick="{{ startSession }}" hint-size="140px,40px">Start session</x-import>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="text" size="s" onClick="{{ openDeck }}" hint-size="100px,40px">See cards</x-import>
+</div>
+</div>
+<div class="m3-title-small" style="padding:24px 16px 0;color:var(--m3-on-surface-variant)">Your decks</div>
+<div style="display:flex;flex-direction:column;padding:4px 0 140px">
+<sc-for list="{{ decks }}" as="deck" hint-placeholder-count="4">
+<div onClick="{{ deck.open }}" style="cursor:pointer">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.ListItem" lines="{{ 2 }}" headline="{{ deck.title }}" supporting-text="{{ deck.meta }}" trailing="{{ deck.count }}" hint-size="100%,72px"></x-import>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="position:absolute;right:16px;bottom:104px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Fab" extended="{{ true }}" onClick="{{ goSource }}" hint-size="150px,56px">Add cards</x-import>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDeck }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;flex:1">
+<div style="display:flex;align-items:center;gap:4px;padding:12px 8px 4px 4px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.IconButton" label="Back" onClick="{{ goHome }}" hint-size="40px,40px"><x-import component-from-global-scope="Material3DesignSystem_02f52c.Icon" name="ArrowBack" hint-size="24px,24px"></x-import></x-import>
+<div class="m3-title-large" style="flex:1;min-width:0;padding-left:8px">Big-O notation</div>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.IconButton" label="More" hint-size="40px,40px"><x-import component-from-global-scope="Material3DesignSystem_02f52c.Icon" name="MoreVert" hint-size="24px,24px"></x-import></x-import>
+</div>
+<div style="padding:8px 16px 0;display:flex;flex-direction:column;gap:8px">
+<div class="m3-body-medium" style="color:var(--m3-on-surface-variant)">8 of 12 mastered</div>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.LinearProgress" value="{{ deckProgress }}" hint-size="100%,12px"></x-import>
+</div>
+<div style="display:flex;gap:8px;padding:16px 16px 4px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Chip" selected="{{ true }}" hint-size="60px,32px">All</x-import>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Chip" hint-size="90px,32px">Learning</x-import>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Chip" hint-size="90px,32px">Mastered</x-import>
+</div>
+<div style="flex:1;padding:4px 0 120px">
+<sc-for list="{{ deckCards }}" as="c" hint-placeholder-count="5">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.ListItem" lines="{{ 2 }}" headline="{{ c.term }}" supporting-text="{{ c.meaning }}" trailing="{{ c.status }}" hint-size="100%,72px"></x-import>
+</sc-for>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:12px 16px 20px;background:var(--m3-surface-container);display:grid">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="filled" size="m" onClick="{{ startSession }}" hint-size="100%,56px">{{ startLabel }}</x-import>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isReview }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;flex:1">
+<div style="display:flex;align-items:center;gap:4px;padding:12px 8px 0 4px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.IconButton" label="End session" onClick="{{ goHome }}" hint-size="40px,40px"><x-import component-from-global-scope="Material3DesignSystem_02f52c.Icon" name="Close" hint-size="24px,24px"></x-import></x-import>
+<div class="m3-title-medium" style="flex:1;text-align:center;color:var(--m3-on-surface-variant)">{{ reviewCounter }}</div>
+<div style="width:40px"></div>
+</div>
+<div style="padding:4px 20px 0"><x-import component-from-global-scope="Material3DesignSystem_02f52c.LinearProgress" value="{{ reviewProgress }}" hint-size="100%,12px"></x-import></div>
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px;padding:8px 20px 28px">
+<div ref="{{ cardRef }}" onPointerDown="{{ onDown }}" onPointerMove="{{ onMove }}" onPointerUp="{{ onUp }}" onPointerCancel="{{ onUp }}" style="position:relative;touch-action:none;cursor:grab;user-select:none;background:var(--m3-surface-container-low);border-radius:28px;padding:32px 24px;min-height:320px;display:flex;flex-direction:column;justify-content:center;gap:20px;box-shadow:0 1px 2px rgba(0,0,0,0.3),0 1px 3px 1px rgba(0,0,0,0.15)">
+<div ref="{{ leftRef }}" style="position:absolute;top:16px;left:16px;opacity:0;padding:4px 12px;border-radius:100px;background:var(--m3-secondary-container);color:var(--m3-on-secondary-container)" class="m3-label-large">Again</div>
+<div ref="{{ rightRef }}" style="position:absolute;top:16px;right:16px;opacity:0;padding:4px 12px;border-radius:100px;background:var(--m3-primary);color:var(--m3-on-primary)" class="m3-label-large">Knew it</div>
+<div class="m3-display-small" style="text-wrap:pretty">{{ currentTerm }}</div>
+<sc-if value="{{ revealed }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="height:1px;background:var(--m3-outline-variant)"></div>
+<div class="m3-body-large" style="text-wrap:pretty">{{ currentMeaning }}</div>
+<sc-if value="{{ withExample }}" hint-placeholder-val="{{ false }}">
+<div style="padding:12px 14px;border-radius:12px;background:var(--m3-surface-container-high)">
+<div class="m3-label-medium" style="color:var(--m3-on-surface-variant);padding-bottom:4px">Example</div>
+<div class="m3-body-medium">{{ currentExample }}</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ notRevealed }}" hint-placeholder-val="{{ true }}">
+<div class="m3-label-large" style="color:var(--m3-on-surface-variant)">Tap to reveal</div>
+</sc-if>
+</div>
+<div class="m3-body-small" style="text-align:center;color:var(--m3-on-surface-variant)">Swipe left if it didn't stick, right if it did</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="outlined" size="m" onClick="{{ markAgain }}" hint-size="100%,56px">Again</x-import>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="filled" size="m" onClick="{{ markKnown }}" hint-size="100%,56px">Knew it</x-import>
+</div>
+</div>
+<sc-if value="{{ hasFlash }}" hint-placeholder-val="{{ false }}">
+<div style="position:absolute;left:0;right:0;top:60px;display:flex;justify-content:center;pointer-events:none">
+<div class="m3-label-large" style="padding:8px 16px;border-radius:100px;background:var(--m3-inverse-surface);color:var(--m3-inverse-on-surface)">{{ flash }}</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isQuiz }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;flex:1">
+<div style="display:flex;align-items:center;gap:4px;padding:12px 8px 0 4px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.IconButton" label="End quiz" onClick="{{ goHome }}" hint-size="40px,40px"><x-import component-from-global-scope="Material3DesignSystem_02f52c.Icon" name="Close" hint-size="24px,24px"></x-import></x-import>
+<div class="m3-title-medium" style="flex:1;text-align:center;color:var(--m3-on-surface-variant)">{{ quizCounter }}</div>
+<div style="width:40px"></div>
+</div>
+<div style="padding:4px 20px 0"><x-import component-from-global-scope="Material3DesignSystem_02f52c.LinearProgress" value="{{ quizProgress }}" hint-size="100%,12px"></x-import></div>
+<div style="padding:24px 20px 8px">
+<div class="m3-label-large" style="color:var(--m3-primary);padding-bottom:8px">Quick check</div>
+<div class="m3-headline-small" style="text-wrap:pretty">{{ quizQuestion }}</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding:8px 20px">
+<sc-for list="{{ quizOptions }}" as="opt" hint-placeholder-count="4">
+<div onClick="{{ opt.pick }}" class="m3-body-large" style="cursor:pointer;padding:18px 20px;border-radius:20px;border:1px solid {{ opt.border }};background:{{ opt.bg }};color:{{ opt.fg }};display:flex;align-items:center;gap:12px;min-height:24px">
+<div style="flex:1;min-width:0">{{ opt.label }}</div>
+<div class="m3-label-medium">{{ opt.mark }}</div>
+</div>
+</sc-for>
+</div>
+<sc-if value="{{ quizAnswered }}" hint-placeholder-val="{{ false }}">
+<div style="margin:12px 20px;padding:16px;border-radius:16px;background:var(--m3-surface-container-high)">
+<div class="m3-title-small" style="padding-bottom:4px">{{ quizVerdict }}</div>
+<div class="m3-body-medium" style="color:var(--m3-on-surface-variant);text-wrap:pretty">{{ quizExplain }}</div>
+</div>
+<div style="display:grid;padding:8px 20px 24px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="filled" size="m" onClick="{{ nextQuestion }}" hint-size="100%,56px">{{ quizNextLabel }}</x-import>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isResult }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;flex:1;padding:0 20px 24px">
+<div style="padding:24px 0 0" class="m3-title-medium">Session done</div>
+<div style="padding:20px 0 0;display:flex;flex-direction:column;gap:8px">
+<div class="m3-display-medium" style="color:var(--m3-primary)">{{ scoreLine }}</div>
+<div class="m3-body-large" style="color:var(--m3-on-surface-variant)">remembered on the first pass</div>
+<div class="m3-body-large" style="color:var(--m3-on-surface-variant)">{{ quizScoreLine }}</div>
+</div>
+<div style="padding:20px 0"><x-import component-from-global-scope="Material3DesignSystem_02f52c.LinearProgress" value="{{ scorePercent }}" thickness="{{ 8 }}" hint-size="100%,16px"></x-import></div>
+<sc-if value="{{ hasMissed }}" hint-placeholder-val="{{ true }}">
+<div class="m3-title-small" style="padding:8px 0 4px;color:var(--m3-on-surface-variant)">Worth another look</div>
+<sc-for list="{{ missedCards }}" as="m" hint-placeholder-count="1">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.ListItem" lines="{{ 2 }}" headline="{{ m.term }}" supporting-text="{{ m.meaning }}" hint-size="100%,72px"></x-import>
+</sc-for>
+</sc-if>
+<div style="margin:16px 0 0;padding:16px;border-radius:20px;background:var(--m3-tertiary-container);color:var(--m3-on-tertiary-container)">
+<div class="m3-body-medium" style="text-wrap:pretty">Two minutes is a full session. Nothing is waiting for you tomorrow if you skip it.</div>
+</div>
+<div style="flex:1"></div>
+<div style="display:grid;gap:8px;padding-top:16px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="filled" size="m" onClick="{{ goHome }}" hint-size="100%,56px">Done</x-import>
+<sc-if value="{{ hasMissed }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="text" size="m" onClick="{{ startSession }}" hint-size="100%,56px">Review the misses</x-import>
+</div>
+</sc-if>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isStats }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;flex:1;padding-bottom:100px">
+<div class="m3-headline-small" style="padding:16px 16px 8px">Progress</div>
+<div style="margin:8px 16px 0;padding:20px;border-radius:28px;background:var(--m3-primary-container);color:var(--m3-on-primary-container);display:flex;flex-direction:column;gap:16px">
+<div>
+<div class="m3-display-small">4 days</div>
+<div class="m3-body-medium">in a row</div>
+</div>
+<div style="display:flex;gap:8px">
+<sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px">
+<div style="width:100%;aspect-ratio:1;border-radius:100px;background:{{ d.bg }};border:1px solid {{ d.border }}"></div>
+<div class="m3-label-small">{{ d.label }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:16px">
+<sc-for list="{{ tiles }}" as="t" hint-placeholder-count="3">
+<div style="padding:16px 12px;border-radius:20px;background:var(--m3-surface-container-high);display:flex;flex-direction:column;gap:4px">
+<div class="m3-title-large">{{ t.value }}</div>
+<div class="m3-label-medium" style="color:var(--m3-on-surface-variant)">{{ t.label }}</div>
+</div>
+</sc-for>
+</div>
+<div style="margin:0 16px;padding:16px;border-radius:20px;background:var(--m3-surface-container);display:flex;flex-direction:column;gap:6px">
+<div class="m3-title-small">You skipped Tuesday</div>
+<div class="m3-body-medium" style="color:var(--m3-on-surface-variant);text-wrap:pretty">The streak holds your place. Pick it back up whenever you have two minutes.</div>
+</div>
+<div class="m3-title-small" style="padding:24px 16px 0;color:var(--m3-on-surface-variant)">Decks touched this week</div>
+<sc-for list="{{ decks }}" as="deck" hint-placeholder-count="3">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.ListItem" lines="{{ 1 }}" headline="{{ deck.title }}" trailing="{{ deck.weekly }}" hint-size="100%,56px"></x-import>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;flex:1;padding-bottom:100px">
+<div class="m3-headline-small" style="padding:16px 16px 8px">Settings</div>
+<div class="m3-title-small" style="padding:16px 16px 4px;color:var(--m3-primary)">Focus</div>
+<sc-for list="{{ focusToggles }}" as="t" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:16px;padding:14px 16px;min-height:56px">
+<div style="flex:1;min-width:0">
+<div class="m3-body-large">{{ t.title }}</div>
+<div class="m3-body-small" style="color:var(--m3-on-surface-variant);text-wrap:pretty">{{ t.desc }}</div>
+</div>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Switch" checked="{{ t.on }}" onChange="{{ t.toggle }}" hint-size="52px,32px"></x-import>
+</div>
+</sc-for>
+<div style="padding:12px 16px 4px">
+<div class="m3-body-large" style="padding-bottom:4px">Session length</div>
+<div class="m3-body-small" style="color:var(--m3-on-surface-variant);padding-bottom:12px">Every session ends where you can see it.</div>
+<div style="display:flex;gap:8px">
+<sc-for list="{{ lengths }}" as="o" hint-placeholder-count="3">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Chip" selected="{{ o.sel }}" onClick="{{ o.pick }}" hint-size="86px,32px">{{ o.label }}</x-import>
+</sc-for>
+</div>
+</div>
+<div class="m3-title-small" style="padding:28px 16px 4px;color:var(--m3-primary)">Appearance</div>
+<div style="display:flex;align-items:center;gap:16px;padding:14px 16px;min-height:56px">
+<div class="m3-body-large" style="flex:1;min-width:0">Dark theme</div>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Switch" checked="{{ isDark }}" onChange="{{ toggleTheme }}" hint-size="52px,32px"></x-import>
+</div>
+<div class="m3-title-small" style="padding:28px 16px 4px;color:var(--m3-primary)">Nudges</div>
+<div style="display:flex;align-items:center;gap:16px;padding:14px 16px;min-height:56px">
+<div style="flex:1;min-width:0">
+<div class="m3-body-large">Gentle reminders</div>
+<div class="m3-body-small" style="color:var(--m3-on-surface-variant)">One nudge, no counters, no guilt</div>
+</div>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Switch" checked="{{ gentle }}" onChange="{{ toggleGentle }}" hint-size="52px,32px"></x-import>
+</div>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.ListItem" lines="{{ 1 }}" headline="Reminder time" trailing="19:00" hint-size="100%,56px"></x-import>
+</div>
+</sc-if>
+
+<sc-if value="{{ isSource }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;flex:1">
+<div style="display:flex;align-items:center;gap:4px;padding:12px 8px 4px 4px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.IconButton" label="Close" onClick="{{ goHome }}" hint-size="40px,40px"><x-import component-from-global-scope="Material3DesignSystem_02f52c.Icon" name="Close" hint-size="24px,24px"></x-import></x-import>
+<div class="m3-title-large" style="flex:1;min-width:0;padding-left:8px">Add cards</div>
+</div>
+<sc-if value="{{ notBusy }}" hint-placeholder-val="{{ true }}">
+<div style="padding:16px 20px 0;display:flex;flex-direction:column;gap:8px">
+<div class="m3-headline-small" style="text-wrap:pretty">Paste a link or some text</div>
+<div class="m3-body-medium" style="color:var(--m3-on-surface-variant);text-wrap:pretty">One page or a few paragraphs is enough. Cards come back as one idea each.</div>
+</div>
+<div style="padding:20px">
+<textarea value="{{ source }}" onChange="{{ setSource }}" placeholder="https://example.com/big-o  —  or paste your notes" class="m3-body-large" style="width:100%;box-sizing:border-box;min-height:180px;resize:none;padding:16px;border-radius:12px;border:1px solid var(--m3-outline);background:transparent;color:var(--m3-on-surface);font-family:var(--m3-font-plain);outline:none"></textarea>
+<div style="display:flex;gap:8px;padding-top:12px;min-height:32px">
+<sc-if value="{{ hasSource }}" hint-placeholder-val="{{ false }}">
+<div class="m3-label-large" style="padding:6px 14px;border-radius:100px;background:var(--m3-secondary-container);color:var(--m3-on-secondary-container)">{{ sourceKind }}</div>
+</sc-if>
+</div>
+</div>
+<sc-if value="{{ hasGenError }}" hint-placeholder-val="{{ false }}">
+<div style="margin:0 20px 8px;padding:16px;border-radius:16px;background:var(--m3-error-container);color:var(--m3-on-error-container)">
+<div class="m3-body-medium">{{ genError }}</div>
+</div>
+</sc-if>
+<div style="flex:1;min-height:16px"></div>
+<div style="display:grid;gap:4px;padding:16px 20px 24px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="filled" size="m" disabled="{{ noSource }}" onClick="{{ generate }}" hint-size="100%,56px">Generate cards</x-import>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="text" size="m" onClick="{{ goCreate }}" hint-size="100%,56px">Write them myself</x-import>
+</div>
+</sc-if>
+<sc-if value="{{ busy }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:20px;padding:20px 20px 80px">
+<div class="m3-headline-small">{{ step }}</div>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.LinearProgress" hint-size="100%,12px"></x-import>
+<div class="m3-body-medium" style="color:var(--m3-on-surface-variant)">This takes a few seconds. Nothing to do here.</div>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isGenerated }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;flex:1">
+<div style="display:flex;align-items:center;gap:4px;padding:12px 8px 4px 4px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.IconButton" label="Back" onClick="{{ goSource }}" hint-size="40px,40px"><x-import component-from-global-scope="Material3DesignSystem_02f52c.Icon" name="ArrowBack" hint-size="24px,24px"></x-import></x-import>
+<div class="m3-title-large" style="flex:1;min-width:0;padding-left:8px">Generated cards</div>
+</div>
+<div style="padding:16px 16px 0">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.TextField" variant="outlined" label="Deck name" value="{{ deckName }}" onChange="{{ setDeckName }}" hint-size="100%,56px"></x-import>
+</div>
+<div class="m3-body-medium" style="padding:20px 16px 4px;color:var(--m3-on-surface-variant)">{{ keepSummary }}</div>
+<div style="display:flex;flex-direction:column;padding-bottom:120px">
+<sc-for list="{{ genCards }}" as="g" hint-placeholder-count="6">
+<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 16px">
+<div style="padding-top:2px"><x-import component-from-global-scope="Material3DesignSystem_02f52c.Checkbox" checked="{{ g.keep }}" onChange="{{ g.toggle }}" hint-size="40px,40px"></x-import></div>
+<div style="flex:1;min-width:0;opacity:{{ g.opacity }}">
+<div class="m3-title-medium" style="text-wrap:pretty">{{ g.front }}</div>
+<div class="m3-body-medium" style="color:var(--m3-on-surface-variant);text-wrap:pretty">{{ g.back }}</div>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="position:absolute;left:0;right:0;bottom:0;padding:12px 16px 20px;background:var(--m3-surface-container);display:grid">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="filled" size="m" onClick="{{ saveGenerated }}" hint-size="100%,56px">{{ saveLabel }}</x-import>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCreate }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;flex:1">
+<div style="display:flex;align-items:center;gap:4px;padding:12px 8px 4px 4px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.IconButton" label="Back" onClick="{{ goHome }}" hint-size="40px,40px"><x-import component-from-global-scope="Material3DesignSystem_02f52c.Icon" name="Close" hint-size="24px,24px"></x-import></x-import>
+<div class="m3-title-large" style="flex:1;min-width:0;padding-left:8px">New deck</div>
+</div>
+<div style="padding:16px 16px 0">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.TextField" variant="outlined" label="Deck name" value="{{ deckName }}" onChange="{{ setDeckName }}" hint-size="100%,56px"></x-import>
+</div>
+<div class="m3-title-small" style="padding:28px 16px 0;color:var(--m3-on-surface-variant)">Cards</div>
+<sc-for list="{{ newCards }}" as="c" hint-placeholder-count="1">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.ListItem" lines="{{ 2 }}" headline="{{ c.f }}" supporting-text="{{ c.b }}" hint-size="100%,72px"></x-import>
+</sc-for>
+<div style="margin:12px 16px 0;padding:16px;border-radius:20px;background:var(--m3-surface-container);display:flex;flex-direction:column;gap:16px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.TextField" variant="outlined" label="Front" value="{{ front }}" supporting-text="One idea per card" onChange="{{ setFront }}" hint-size="100%,56px"></x-import>
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.TextField" variant="outlined" label="Back" value="{{ back }}" onChange="{{ setBack }}" hint-size="100%,56px"></x-import>
+<div style="display:grid">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="outlined" size="s" onClick="{{ addCard }}" hint-size="100%,40px">Add card</x-import>
+</div>
+</div>
+<div style="flex:1;min-height:24px"></div>
+<div style="display:grid;padding:16px 16px 24px">
+<x-import component-from-global-scope="Material3DesignSystem_02f52c.Button" variant="filled" size="m" onClick="{{ goHome }}" hint-size="100%,56px">Save deck</x-import>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
+<div style="position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;height:80px;padding:12px 8px 16px;box-sizing:border-box;background:var(--m3-surface-container)">
+<sc-for list="{{ navItems }}" as="n" hint-placeholder-count="3">
+<div onClick="{{ n.go }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:{{ n.fg }}">
+<div style="display:flex;align-items:center;justify-content:center;width:64px;height:32px;border-radius:100px;background:{{ n.pill }}"><x-import component-from-global-scope="Material3DesignSystem_02f52c.Icon" name="{{ n.icon }}" hint-size="24px,24px"></x-import></div>
+<div class="m3-label-medium">{{ n.label }}</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+</div>
+</x-import>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:476,&quot;height&quot;:972},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;sessionLength&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:3,&quot;max&quot;:10,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Focus&quot;},&quot;reducedMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Focus&quot;},&quot;showExample&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Focus&quot;}}">
+const CARDS = [
+  { term: 'Big-O notation', meaning: "A shorthand for how an algorithm's cost grows as its input grows.", example: 'Double the input: does the work double, or square?', status: 'Learning' },
+  { term: 'O(1)', meaning: 'Constant time. The cost is the same no matter how big the input is.', example: 'Reading arr[0] from an array.', status: 'Mastered' },
+  { term: 'O(n)', meaning: 'Linear time. Cost grows in step with the input.', example: 'One loop over every item in a list.', status: 'Mastered' },
+  { term: 'O(log n)', meaning: 'Logarithmic time. Each step throws away half of the work that is left.', example: 'Binary search in a sorted array.', status: 'Learning' },
+  { term: 'O(n\u00b2)', meaning: 'Quadratic time. A loop inside a loop.', example: 'Comparing every item against every other item.', status: 'Learning' },
+];
+
+const DECKS = [
+  { id: 'bigo', title: 'Big-O notation', meta: '8 of 12 mastered', count: '12', weekly: '5 cards' },
+  { id: 'js', title: 'JavaScript fundamentals', meta: '15 of 24 mastered', count: '24', weekly: '18 cards' },
+  { id: 'git', title: 'Git basics', meta: '4 of 18 mastered', count: '18', weekly: '9 cards' },
+  { id: 'hooks', title: 'React hooks', meta: 'Not started', count: '9', weekly: '\u2014' },
+];
+
+const QUIZ = [
+  { q: 'Which cost describes binary search?', options: ['O(1)', 'O(log n)', 'O(n)', 'O(n\u00b2)'], answer: 1, explain: 'Each comparison discards half of the remaining range.' },
+  { q: 'A loop inside a loop is usually\u2026', options: ['O(n)', 'O(log n)', 'O(n\u00b2)', 'O(1)'], answer: 2, explain: 'Every item is compared against every other item, so the work squares.' },
+  { q: 'Reading arr[0] costs\u2026', options: ['O(1)', 'O(n)', 'O(log n)', 'O(n\u00b2)'], answer: 0, explain: 'The index is a direct lookup, so input size makes no difference.' },
+];
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      screen: 'home',
+      dark: props.theme === 'dark',
+      sessionLen: props.sessionLength || 5,
+      reducedMotion: !!props.reducedMotion,
+      oneAtATime: true,
+      hideStreak: false,
+      gentle: true,
+      idx: 0,
+      revealed: false,
+      known: [],
+      flash: null,
+      quizIdx: 0,
+      picks: [null, null, null],
+      deckName: '',
+      front: '',
+      back: '',
+      newCards: [{ f: 'Pure function', b: 'Same input, same output, no side effects' }],
+      source: '',
+      busy: false,
+      step: '',
+      genError: null,
+      gen: [],
+      keep: [],
+      extraDecks: [],
+    };
+    this.cardRef = React.createRef();
+    this.leftRef = React.createRef();
+    this.rightRef = React.createRef();
+    this.drag = 0;
+    this.startX = 0;
+    this.dragging = false;
+  }
+
+  componentDidMount() { this.applyTheme(); }
+  componentDidUpdate() { this.applyTheme(); }
+  applyTheme() {
+    document.documentElement.setAttribute('data-mode', this.state.dark ? 'teal-dt' : 'teal-lt');
+  }
+
+  session() { return CARDS.slice(0, Math.min(this.state.sessionLen, CARDS.length)); }
+  go(screen) { this.setState({ screen: screen }); }
+
+  resetCard() {
+    const el = this.cardRef.current;
+    if (el) {
+      el.style.transition = 'transform 200ms cubic-bezier(0.2,0,0,1)';
+      el.style.transform = 'none';
+      el.style.opacity = '1';
+    }
+    if (this.leftRef.current) this.leftRef.current.style.opacity = '0';
+    if (this.rightRef.current) this.rightRef.current.style.opacity = '0';
+    this.drag = 0;
+  }
+
+  commit(knew) {
+    const el = this.cardRef.current;
+    const ms = this.state.reducedMotion ? 0 : 200;
+    if (el && ms) {
+      el.style.transition = 'transform ' + ms + 'ms cubic-bezier(0.3,0,0.8,0.15), opacity ' + ms + 'ms';
+      el.style.transform = 'translateX(' + (knew ? 520 : -520) + 'px) rotate(' + (knew ? 12 : -12) + 'deg)';
+      el.style.opacity = '0';
+    }
+    this.setState(function (s) { return { flash: knew ? 'Kept' : 'Back in the pile', known: s.known.concat([knew]) }; });
+    const self = this;
+    setTimeout(function () {
+      if (el) { el.style.transition = 'none'; el.style.transform = 'none'; el.style.opacity = '1'; }
+      if (self.leftRef.current) self.leftRef.current.style.opacity = '0';
+      if (self.rightRef.current) self.rightRef.current.style.opacity = '0';
+      self.drag = 0;
+      const total = self.session().length;
+      self.setState(function (s) {
+        if (s.idx + 1 >= total) return { screen: 'quiz', idx: 0, revealed: false, quizIdx: 0, picks: [null, null, null] };
+        return { idx: s.idx + 1, revealed: false };
+      });
+    }, ms + 20);
+    setTimeout(function () { self.setState({ flash: null }); }, 900);
+  }
+
+  looksLikeUrl(v) { return /^(https?:\/\/|www\.)\S+$/i.test(v.trim()); }
+
+  async generate() {
+    const raw = this.state.source.trim();
+    if (!raw) return;
+    const isUrl = this.looksLikeUrl(raw);
+    this.setState({ busy: true, genError: null, step: isUrl ? 'Reading the page' : 'Reading your text' });
+    let material = raw;
+    if (isUrl) {
+      const url = /^www\./i.test(raw) ? 'https://' + raw : raw;
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const html = await res.text();
+          material = html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&[a-z]+;/gi, ' ').replace(/\s+/g, ' ').slice(0, 6000);
+        }
+      } catch (err) { /* keep the URL itself as the material */ }
+    }
+    this.setState({ step: 'Writing cards' });
+    try {
+      const out = await window.claude.complete({
+        max_tokens: 2000,
+        system: 'You write flashcards for people with ADHD. One idea per card, never two. The front is a short term or a direct question. The back is one plain sentence, under 18 words, no jargon unless the card is about that word. Reply with JSON only, no prose, no code fences, shaped {"title":"short deck name","cards":[{"front":"","back":""}]}. Six to eight cards.',
+        messages: [{ role: 'user', content: (isUrl && material === raw ? 'Make a deck about the topic of this link: ' : 'Make a deck from this material:\n\n') + material }],
+      });
+      const match = String(out).match(/\{[\s\S]*\}/);
+      const data = JSON.parse(match ? match[0] : out);
+      const cards = (data.cards || []).filter(function (c) { return c && c.front; });
+      if (!cards.length) throw new Error('empty');
+      this.setState({
+        screen: 'generated',
+        busy: false,
+        gen: cards,
+        keep: cards.map(function () { return true; }),
+        deckName: data.title || 'New deck',
+      });
+    } catch (err) {
+      this.setState({ busy: false, genError: 'Could not turn that into cards. Try a shorter block of text, or write them yourself.' });
+    }
+  }
+
+  renderVals() {
+    const s = this.state;
+    const self = this;
+    const cards = this.session();
+    const card = cards[Math.min(s.idx, cards.length - 1)] || CARDS[0];
+    const q = QUIZ[s.quizIdx];
+    const pick = s.picks[s.quizIdx];
+    const answered = pick !== null && pick !== undefined;
+    const knownCount = s.known.filter(Boolean).length;
+    const missed = [];
+    for (let i = 0; i < s.known.length; i++) if (!s.known[i] && cards[i]) missed.push(cards[i]);
+
+    const navDefs = [
+      { id: 'home', label: 'Decks', icon: 'Bookmark', iconOn: 'BookmarkFilled' },
+      { id: 'stats', label: 'Progress', icon: 'Stars', iconOn: 'StarsFilled' },
+      { id: 'settings', label: 'Settings', icon: 'Settings', iconOn: 'Settings' },
+    ];
+
+    const toggle = function (key) { return function () { self.setState(function (p) { const o = {}; o[key] = !p[key]; return o; }); }; };
+
+    return {
+      isDark: s.dark,
+      themeIcon: s.dark ? 'LightMode' : 'DarkMode',
+      toggleTheme: function () { self.setState(function (p) { return { dark: !p.dark }; }); },
+
+      isHome: s.screen === 'home',
+      isDeck: s.screen === 'deck',
+      isReview: s.screen === 'review',
+      isQuiz: s.screen === 'quiz',
+      isResult: s.screen === 'result',
+      isStats: s.screen === 'stats',
+      isSettings: s.screen === 'settings',
+      isCreate: s.screen === 'create',
+      showNav: s.screen === 'home' || s.screen === 'stats' || s.screen === 'settings',
+
+      goHome: function () { self.go('home'); },
+      openDeck: function () { self.go('deck'); },
+      goCreate: function () { self.go('create'); },
+      startSession: function () { self.setState({ screen: 'review', idx: 0, revealed: false, known: [] }); },
+
+      isSource: s.screen === 'source',
+      isGenerated: s.screen === 'generated',
+      goSource: function () { self.setState({ screen: 'source', genError: null }); },
+      busy: s.busy,
+      notBusy: !s.busy,
+      step: s.step,
+      source: s.source,
+      hasSource: s.source.trim().length > 0,
+      noSource: s.source.trim().length === 0,
+      sourceKind: this.looksLikeUrl(s.source) ? 'Link detected' : s.source.trim().split(/\s+/).length + ' words',
+      setSource: function (e) { self.setState({ source: e.target.value }); },
+      generate: function () { self.generate(); },
+      genError: s.genError,
+      hasGenError: !!s.genError,
+      keepSummary: s.keep.filter(Boolean).length + ' of ' + s.gen.length + ' cards kept \u00b7 untick anything that does not help',
+      saveLabel: 'Save ' + s.keep.filter(Boolean).length + ' cards',
+      genCards: s.gen.map(function (c, i) {
+        return {
+          front: c.front, back: c.back, keep: !!s.keep[i], opacity: s.keep[i] ? 1 : 0.4,
+          toggle: function () { self.setState(function (p) { const k = p.keep.slice(); k[i] = !k[i]; return { keep: k }; }); },
+        };
+      }),
+      saveGenerated: function () {
+        self.setState(function (p) {
+          const n = p.keep.filter(Boolean).length;
+          return {
+            screen: 'home',
+            source: '',
+            gen: [],
+            keep: [],
+            extraDecks: [{ id: 'gen' + p.extraDecks.length, title: p.deckName || 'New deck', meta: 'Not started', count: String(n), weekly: '\u2014' }].concat(p.extraDecks),
+          };
+        });
+      },
+
+      decks: s.extraDecks.concat(DECKS).map(function (d) {
+        return { title: d.title, meta: d.meta, count: d.count, weekly: d.weekly, open: function () { self.go('deck'); } };
+      }),
+      deckCards: CARDS,
+      deckProgress: 66,
+      sessionSummary: cards.length + ' cards \u00b7 about ' + Math.max(1, Math.round(cards.length * 0.4)) + ' min',
+      startLabel: 'Review ' + cards.length + ' cards',
+
+      currentTerm: card.term,
+      currentMeaning: card.meaning,
+      currentExample: card.example,
+      withExample: this.props.showExample !== false,
+      revealed: s.revealed,
+      notRevealed: !s.revealed,
+      reviewCounter: (s.idx + 1) + ' of ' + cards.length,
+      reviewProgress: Math.round((s.idx / cards.length) * 100),
+      flash: s.flash,
+      hasFlash: !!s.flash,
+      cardRef: this.cardRef,
+      leftRef: this.leftRef,
+      rightRef: this.rightRef,
+      markAgain: function () { self.commit(false); },
+      markKnown: function () { self.commit(true); },
+      onDown: function (e) {
+        self.dragging = true;
+        self.drag = 0;
+        self.startX = e.clientX;
+        const el = self.cardRef.current;
+        if (el) {
+          el.style.transition = 'none';
+          if (el.setPointerCapture) { try { el.setPointerCapture(e.pointerId); } catch (err) {} }
+        }
+      },
+      onMove: function (e) {
+        if (!self.dragging) return;
+        self.drag = e.clientX - self.startX;
+        const el = self.cardRef.current;
+        if (el) el.style.transform = 'translateX(' + self.drag + 'px) rotate(' + (self.drag * 0.03) + 'deg)';
+        if (self.leftRef.current) self.leftRef.current.style.opacity = String(Math.min(1, Math.max(0, -self.drag) / 90));
+        if (self.rightRef.current) self.rightRef.current.style.opacity = String(Math.min(1, Math.max(0, self.drag) / 90));
+      },
+      onUp: function () {
+        if (!self.dragging) return;
+        self.dragging = false;
+        const d = self.drag;
+        if (Math.abs(d) < 10) { self.resetCard(); self.setState(function (p) { return { revealed: !p.revealed }; }); return; }
+        if (Math.abs(d) > 90) { self.commit(d > 0); return; }
+        self.resetCard();
+      },
+
+      quizCounter: 'Question ' + (s.quizIdx + 1) + ' of ' + QUIZ.length,
+      quizProgress: Math.round((s.quizIdx / QUIZ.length) * 100),
+      quizQuestion: q.q,
+      quizAnswered: answered,
+      quizVerdict: answered ? (pick === q.answer ? 'Correct' : 'Not quite') : '',
+      quizExplain: q.explain,
+      quizNextLabel: s.quizIdx + 1 >= QUIZ.length ? 'See results' : 'Next question',
+      nextQuestion: function () {
+        self.setState(function (p) {
+          if (p.quizIdx + 1 >= QUIZ.length) return { screen: 'result' };
+          return { quizIdx: p.quizIdx + 1 };
+        });
+      },
+      quizOptions: q.options.map(function (label, i) {
+        let bg = 'transparent', border = 'var(--m3-outline-variant)', fg = 'var(--m3-on-surface)', mark = '';
+        if (answered) {
+          if (i === q.answer) { bg = 'var(--m3-primary-container)'; border = 'var(--m3-primary)'; fg = 'var(--m3-on-primary-container)'; mark = 'Correct'; }
+          else if (i === pick) { bg = 'var(--m3-error-container)'; border = 'var(--m3-error)'; fg = 'var(--m3-on-error-container)'; mark = 'Your pick'; }
+          else { fg = 'var(--m3-on-surface-variant)'; }
+        }
+        return {
+          label: label, bg: bg, border: border, fg: fg, mark: mark,
+          pick: function () {
+            if (answered) return;
+            self.setState(function (p) { const n = p.picks.slice(); n[p.quizIdx] = i; return { picks: n }; });
+          },
+        };
+      }),
+
+      scoreLine: knownCount + ' of ' + cards.length,
+      scorePercent: cards.length ? Math.round((knownCount / cards.length) * 100) : 0,
+      missedCards: missed,
+      hasMissed: missed.length > 0,
+      quizScoreLine: s.picks.filter(function (p, i) { return p === QUIZ[i].answer; }).length + ' of ' + QUIZ.length + ' on the quick check',
+
+      week: ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(function (label, i) {
+        const done = [true, false, true, true, true, false, false][i];
+        return { label: label, bg: done ? 'currentColor' : 'transparent', border: done ? 'currentColor' : 'var(--m3-on-primary-container)' };
+      }),
+      tiles: [
+        { value: '62', label: 'cards' },
+        { value: '18', label: 'minutes' },
+        { value: '3', label: 'decks' },
+      ],
+
+      focusToggles: [
+        { title: 'One card at a time', desc: 'Nothing else on screen while you review', on: s.oneAtATime, toggle: toggle('oneAtATime') },
+        { title: 'Reduced motion', desc: 'Cards change without sliding or rotating', on: s.reducedMotion, toggle: toggle('reducedMotion') },
+        { title: 'Hide streak counter', desc: 'Keep progress out of sight until you ask for it', on: s.hideStreak, toggle: toggle('hideStreak') },
+      ],
+      gentle: s.gentle,
+      toggleGentle: toggle('gentle'),
+      lengths: [3, 5, 10].map(function (n) {
+        return { label: n + ' cards', sel: s.sessionLen === n, pick: function () { self.setState({ sessionLen: n }); } };
+      }),
+
+      deckName: s.deckName,
+      front: s.front,
+      back: s.back,
+      newCards: s.newCards,
+      setDeckName: function (v) { self.setState({ deckName: v }); },
+      setFront: function (v) { self.setState({ front: v }); },
+      setBack: function (v) { self.setState({ back: v }); },
+      addCard: function () {
+        self.setState(function (p) {
+          if (!p.front) return {};
+          return { newCards: p.newCards.concat([{ f: p.front, b: p.back }]), front: '', back: '' };
+        });
+      },
+
+      navItems: navDefs.map(function (n) {
+        const active = s.screen === n.id;
+        return {
+          label: n.label,
+          icon: active ? n.iconOn : n.icon,
+          fg: active ? 'var(--m3-on-surface)' : 'var(--m3-on-surface-variant)',
+          pill: active ? 'var(--m3-secondary-container)' : 'transparent',
+          go: function () { self.go(n.id); },
+        };
+      }),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

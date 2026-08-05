@@ -1,0 +1,9 @@
+/* Design system global CSS entry point — imports only. */
+@import './tokens/fonts.css';
+@import './tokens/fig-tokens.css';
+@import './tokens/aliases.css';
+@import './tokens/typography.css';
+@import './tokens/elevation.css';
+@import './tokens/motion.css';
+@import './tokens/spacing.css';
+@import './components/m3-components.css';

@@ -1,0 +1,32 @@
+/* Motion. The .fig carries no motion variables; these are the M3 spec easing/duration
+   values (m3.material.io/styles/motion) used to animate the kit's state transitions. */
+:root{
+  --m3-easing-standard:cubic-bezier(0.2,0,0,1); /* @kind other */
+  --m3-easing-standard-accelerate:cubic-bezier(0.3,0,1,1); /* @kind other */
+  --m3-easing-standard-decelerate:cubic-bezier(0,0,0,1); /* @kind other */
+  --m3-easing-emphasized:cubic-bezier(0.2,0,0,1); /* @kind other */
+  --m3-easing-emphasized-accelerate:cubic-bezier(0.3,0,0.8,0.15); /* @kind other */
+  --m3-easing-emphasized-decelerate:cubic-bezier(0.05,0.7,0.1,1); /* @kind other */
+  --m3-easing-legacy:cubic-bezier(0.4,0,0.2,1); /* @kind other */
+  --m3-duration-short-1:50ms; /* @kind other */
+  --m3-duration-short-2:100ms; /* @kind other */
+  --m3-duration-short-3:150ms; /* @kind other */
+  --m3-duration-short-4:200ms; /* @kind other */
+  
+  --m3-duration-medium-1:250ms; /* @kind other */
+  --m3-duration-medium-2:300ms; /* @kind other */
+  --m3-duration-medium-3:350ms; /* @kind other */
+  --m3-duration-medium-4:400ms; /* @kind other */
+  
+  --m3-duration-long-1:450ms; /* @kind other */
+  --m3-duration-long-2:500ms; /* @kind other */
+  --m3-duration-long-3:550ms; /* @kind other */
+  --m3-duration-long-4:600ms; /* @kind other */
+  
+  --m3-duration-extra-long-1:700ms; /* @kind other */
+  --m3-duration-extra-long-2:800ms; /* @kind other */
+  --m3-duration-extra-long-3:900ms; /* @kind other */
+  --m3-duration-extra-long-4:1000ms; /* @kind other */
+  
+  --m3-transition-state:background-color var(--m3-duration-short-4) var(--m3-easing-standard),color var(--m3-duration-short-4) var(--m3-easing-standard),box-shadow var(--m3-duration-short-4) var(--m3-easing-standard),border-radius var(--m3-duration-short-2) var(--m3-easing-standard); /* @kind other */
+}

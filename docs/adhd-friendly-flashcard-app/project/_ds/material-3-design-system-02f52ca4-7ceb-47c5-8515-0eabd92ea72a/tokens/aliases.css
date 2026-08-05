@@ -1,0 +1,62 @@
+/* Semantic aliases over the raw Figma-variable names in fig-tokens.css.
+   Use these in components; they follow the M3 role names from the kit's M3 collection. */
+:root{
+  /* Accent roles */
+  --m3-primary:var(--schemes-primary);--m3-on-primary:var(--schemes-on-primary);
+  --m3-primary-container:var(--schemes-primary-container);--m3-on-primary-container:var(--schemes-on-primary-container);
+  --m3-secondary:var(--schemes-secondary);--m3-on-secondary:var(--schemes-on-secondary);
+  --m3-secondary-container:var(--schemes-secondary-container);--m3-on-secondary-container:var(--schemes-on-secondary-container);
+  --m3-tertiary:var(--schemes-tertiary);--m3-on-tertiary:var(--schemes-on-tertiary);
+  --m3-tertiary-container:var(--schemes-tertiary-container);--m3-on-tertiary-container:var(--schemes-on-tertiary-container);
+  --m3-error:var(--schemes-error);--m3-on-error:var(--schemes-on-error);
+  --m3-error-container:var(--schemes-error-container);--m3-on-error-container:var(--schemes-on-error-container);
+  /* Fixed accent roles */
+  --m3-primary-fixed:var(--schemes-primary-fixed);--m3-primary-fixed-dim:var(--schemes-primary-fixed-dim);
+  --m3-on-primary-fixed:var(--schemes-on-primary-fixed);--m3-on-primary-fixed-variant:var(--schemes-on-primary-fixed-variant);
+  --m3-secondary-fixed:var(--schemes-secondary-fixed);--m3-secondary-fixed-dim:var(--schemes-secondary-fixed-dim);
+  --m3-tertiary-fixed:var(--schemes-tertiary-fixed);--m3-tertiary-fixed-dim:var(--schemes-tertiary-fixed-dim);
+  /* Surfaces */
+  --m3-surface:var(--schemes-surface);--m3-on-surface:var(--schemes-on-surface);
+  --m3-surface-variant:var(--schemes-surface-variant);--m3-on-surface-variant:var(--schemes-on-surface-variant);
+  --m3-surface-dim:var(--schemes-surface-dim);--m3-surface-bright:var(--schemes-surface-bright);
+  --m3-surface-container-lowest:var(--schemes-surface-container-lowest);
+  --m3-surface-container-low:var(--schemes-surface-container-low);
+  --m3-surface-container:var(--schemes-surface-container);
+  --m3-surface-container-high:var(--schemes-surface-container-high);
+  --m3-surface-container-highest:var(--schemes-surface-container-highest);
+  --m3-surface-tint:var(--schemes-surface-tint);
+  --m3-background:var(--schemes-background);--m3-on-background:var(--schemes-on-background);
+  --m3-inverse-surface:var(--schemes-inverse-surface);--m3-inverse-on-surface:var(--schemes-inverse-on-surface);
+  --m3-inverse-primary:var(--schemes-inverse-primary);
+  /* Outline / utility */
+  --m3-outline:var(--schemes-outline);--m3-outline-variant:var(--schemes-outline-variant);
+  --m3-scrim:var(--schemes-scrim);--m3-shadow:var(--schemes-shadow);
+  /* State layer opacities (M3 states: hover 8%, focus/press 10%, drag 16%) */
+  --m3-state-hover:0.08; /* @kind other */
+  --m3-state-focus:0.10; /* @kind other */
+  --m3-state-press:0.10; /* @kind other */
+  --m3-state-drag:0.16; /* @kind other */
+  
+  --m3-disabled-content-opacity:0.38; /* @kind other */
+  --m3-disabled-container-opacity:0.12; /* @kind other */
+  
+
+  /* Shape — Figma Shape collection floats, resolved to px */
+  --m3-corner-none:calc(var(--corner-none) * 1px);
+  --m3-corner-xs:calc(var(--corner-extra-small) * 1px);
+  --m3-corner-sm:calc(var(--corner-small) * 1px);
+  --m3-corner-md:calc(var(--corner-medium) * 1px);
+  --m3-corner-lg:calc(var(--corner-large) * 1px);
+  --m3-corner-lg-increased:calc(var(--corner-large-increased) * 1px);
+  --m3-corner-xl:calc(var(--corner-extra-large) * 1px);
+  --m3-corner-xl-increased:calc(var(--corner-extra-large-increased) * 1px);
+  --m3-corner-xxl:calc(var(--corner-extra-extra-large) * 1px);
+  --m3-corner-full:calc(var(--corner-full) * 1px);
+
+  /* Font families — Font theme collection (Brand & Plain both resolve to Roboto) */
+  --m3-font-brand:var(--static-font-brand),"Google Sans",system-ui,sans-serif;
+  --m3-font-plain:var(--static-font-plain),"Google Sans",system-ui,sans-serif;
+  --m3-font-mono:"Roboto Mono","Google Sans Code",ui-monospace,monospace;
+  /* Numeric weights for the kit's named weight tokens (Regular/Medium/SemiBold) */
+  --m3-weight-regular:400;--m3-weight-medium:500;--m3-weight-bold:600;
+}
