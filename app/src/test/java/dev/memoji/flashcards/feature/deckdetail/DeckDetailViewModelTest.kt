@@ -6,6 +6,7 @@ import dev.memoji.flashcards.core.data.FakeDeckRepository
 import dev.memoji.flashcards.core.model.Card
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -149,6 +150,41 @@ class DeckDetailViewModelTest {
 
         assertEquals(emptyList<String>(), viewModel.fronts())
         assertEquals(false, viewModel.ready().isDeckEmpty)
+    }
+
+    /** A Card that is written and does not appear reads as the app having lost it. */
+    @Test
+    fun `adding a Card while Mastered is chosen falls back to All so the Card is visible`() =
+        runTest {
+            val viewModel = watchedViewModel()
+            viewModel.setFilter(CardFilter.MASTERED)
+
+            viewModel.addCard("O(1)", "Constant time.")
+
+            assertEquals(CardFilter.ALL, viewModel.ready().filter)
+            assertEquals(listOf("O(1)"), viewModel.fronts())
+        }
+
+    @Test
+    fun `adding a Card while Learning is chosen leaves the chip alone`() = runTest {
+        val viewModel = watchedViewModel()
+        viewModel.setFilter(CardFilter.LEARNING)
+
+        viewModel.addCard("O(1)", "Constant time.")
+
+        assertEquals(CardFilter.LEARNING, viewModel.ready().filter)
+        assertEquals(listOf("O(1)"), viewModel.fronts())
+    }
+
+    @Test
+    fun `a Card cannot be written into a Deck that is already gone`() = runTest {
+        val viewModel = watchedViewModel()
+        deckRepository.deleteDeck(deckId)
+
+        viewModel.addCard("O(1)", "Constant time.")
+
+        assertEquals(DeckDetailUiState.DeckGone, viewModel.uiState.value)
+        assertEquals(emptyList<Card>(), cardRepository.observeCards(deckId).first())
     }
 
     @Test

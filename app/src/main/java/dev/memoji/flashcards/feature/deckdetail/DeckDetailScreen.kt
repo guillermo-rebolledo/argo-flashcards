@@ -35,7 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -45,6 +44,8 @@ import dev.memoji.flashcards.R
 import dev.memoji.flashcards.core.model.Card
 import dev.memoji.flashcards.ui.component.DeckNameDialog
 import dev.memoji.flashcards.ui.component.DeleteDeckDialog
+import dev.memoji.flashcards.ui.component.EmptyState
+import dev.memoji.flashcards.ui.component.FabClearance
 
 @Composable
 fun DeckDetailScreen(contentPadding: PaddingValues, onBack: () -> Unit) {
@@ -114,8 +115,14 @@ internal fun DeckDetailScreen(
                         bottomPadding = bottomPadding,
                         modifier = Modifier.weight(1f),
                     )
-                    ready.cards.isEmpty() -> NothingMatchesFilter(
-                        filter = ready.filter,
+                    // A Deck that has Cards, none of which the chosen chip matches. Not the
+                    // same thing as an empty Deck, and it must not read as one.
+                    ready.cards.isEmpty() -> EmptyState(
+                        title = stringResource(ready.filter.emptyTitleRes),
+                        body = stringResource(
+                            ready.filter.emptyBodyRes,
+                            Card.MASTERY_THRESHOLD,
+                        ),
                         bottomPadding = bottomPadding,
                         modifier = Modifier.weight(1f),
                     )
@@ -131,16 +138,19 @@ internal fun DeckDetailScreen(
         }
 
         // Shown while loading too: an empty Deck is the screen this most often lands on, and
-        // the way out of it must not arrive a frame after the screen does.
-        ExtendedFloatingActionButton(
-            onClick = { adding = true },
-            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            text = { Text(stringResource(R.string.cards_add_card)) },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(bottom = bottomPadding)
-                .padding(16.dp),
-        )
+        // the way out of it must not arrive a frame after the screen does. Not shown once the
+        // Deck is gone — there would be nothing to write the Card into.
+        if (uiState !is DeckDetailUiState.DeckGone) {
+            ExtendedFloatingActionButton(
+                onClick = { adding = true },
+                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+                text = { Text(stringResource(R.string.cards_add_card)) },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(bottom = bottomPadding)
+                    .padding(16.dp),
+            )
+        }
     }
 
     if (adding) {
@@ -302,13 +312,6 @@ private fun CardFilterChips(selected: CardFilter, onSelect: (CardFilter) -> Unit
     }
 }
 
-private val CardFilter.labelRes: Int
-    get() = when (this) {
-        CardFilter.ALL -> R.string.cards_filter_all
-        CardFilter.LEARNING -> R.string.cards_filter_learning
-        CardFilter.MASTERED -> R.string.cards_filter_mastered
-    }
-
 @Composable
 private fun CardList(
     cards: List<Card>,
@@ -396,69 +399,10 @@ private fun CardRow(card: Card, onEdit: () -> Unit, onDelete: () -> Unit) {
  */
 @Composable
 private fun EmptyDeck(bottomPadding: Dp, modifier: Modifier = Modifier) {
-    CenteredMessage(
+    EmptyState(
         title = stringResource(R.string.cards_empty_title),
         body = stringResource(R.string.cards_empty_body),
         bottomPadding = bottomPadding,
         modifier = modifier,
     )
 }
-
-/** A Deck that has Cards, none of which the chosen chip matches. */
-@Composable
-private fun NothingMatchesFilter(
-    filter: CardFilter,
-    bottomPadding: Dp,
-    modifier: Modifier = Modifier,
-) {
-    CenteredMessage(
-        title = stringResource(
-            // ALL never lands here: a Deck with Cards always has some that match it.
-            if (filter == CardFilter.MASTERED) {
-                R.string.cards_none_mastered_title
-            } else {
-                R.string.cards_none_learning_title
-            },
-        ),
-        body = stringResource(
-            if (filter == CardFilter.MASTERED) {
-                R.string.cards_none_mastered_body
-            } else {
-                R.string.cards_none_learning_body
-            },
-        ),
-        bottomPadding = bottomPadding,
-        modifier = modifier,
-    )
-}
-
-@Composable
-private fun CenteredMessage(
-    title: String,
-    body: String,
-    bottomPadding: Dp,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = bottomPadding + FabClearance)
-            .padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = body,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-private val FabClearance = 88.dp

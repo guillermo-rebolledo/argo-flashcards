@@ -9,7 +9,9 @@ object DeckDetailRoute {
     /** The argument name the screen's ViewModel reads out of the back stack entry. */
     const val DECK_ID_ARG = "deckId"
 
-    const val PATTERN = "deck/{$DECK_ID_ARG}"
+    private const val PREFIX = "deck"
 
-    fun of(deckId: Long): String = "deck/$deckId"
+    const val PATTERN = "$PREFIX/{$DECK_ID_ARG}"
+
+    fun of(deckId: Long): String = "$PREFIX/$deckId"
 }

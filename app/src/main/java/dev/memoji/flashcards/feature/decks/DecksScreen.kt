@@ -1,7 +1,6 @@
 package dev.memoji.flashcards.feature.decks
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -30,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -39,6 +37,8 @@ import dev.memoji.flashcards.R
 import dev.memoji.flashcards.core.model.Deck
 import dev.memoji.flashcards.ui.component.DeckNameDialog
 import dev.memoji.flashcards.ui.component.DeleteDeckDialog
+import dev.memoji.flashcards.ui.component.EmptyState
+import dev.memoji.flashcards.ui.component.FabClearance
 
 @Composable
 fun DecksScreen(contentPadding: PaddingValues, onOpenDeck: (Long) -> Unit) {
@@ -231,26 +231,10 @@ private fun EmptyDecks(
     bottomPadding: Dp,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = bottomPadding + FabClearance)
-            .padding(horizontal = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            text = stringResource(R.string.decks_empty_title),
-            style = MaterialTheme.typography.titleLarge,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(R.string.decks_empty_body),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
+    EmptyState(
+        title = stringResource(R.string.decks_empty_title),
+        body = stringResource(R.string.decks_empty_body),
+        bottomPadding = bottomPadding,
+        modifier = modifier,
+    )
 }
-
-private val FabClearance = 88.dp

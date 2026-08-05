@@ -45,7 +45,8 @@
     <string name="cards_none_learning_title">Nothing left to learn</string>
     <string name="cards_none_learning_body">Every Card in this Deck is Mastered.</string>
     <string name="cards_none_mastered_title">Nothing Mastered yet</string>
-    <string name="cards_none_mastered_body">A Card is Mastered once you have known it three Sessions running.</string>
+    <!-- The count comes from Card.MASTERY_THRESHOLD, so the copy cannot outlive the rule. -->
+    <string name="cards_none_mastered_body">A Card is Mastered once its Mastery streak reaches %1$d.</string>
 
     <string name="placeholder_progress">Your streak and how much of each Deck you have Mastered will show up here.</string>
     <string name="placeholder_settings">Your API key, Session length, reminders and theme will be set here.</string>

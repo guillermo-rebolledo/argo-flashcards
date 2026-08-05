@@ -52,6 +52,12 @@ internal class DeckDetailViewModel @Inject constructor(
     /** Both sides are required; the editor also blocks a blank one. */
     fun addCard(front: String, back: String) {
         if (front.isBlank() || back.isBlank()) return
+        // Writing into a Deck that has just been deleted would fail on the foreign key. The
+        // screen is already on its way out by then, so there is nothing to add to.
+        if (uiState.value is DeckDetailUiState.DeckGone) return
+        // A new Card is always Learning, so the Mastered chip would swallow it. Writing a Card
+        // and not seeing it appear reads as the app having lost it.
+        if (filter.value == CardFilter.MASTERED) filter.value = CardFilter.ALL
         viewModelScope.launch { cardRepository.createCard(deckId, front, back) }
     }
 
