@@ -1,7 +1,10 @@
 package dev.memoji.flashcards.feature.session
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
@@ -31,9 +35,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -43,6 +51,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.memoji.flashcards.R
 import dev.memoji.flashcards.core.model.Grade
 import dev.memoji.flashcards.ui.component.EmptyState
+import dev.memoji.flashcards.ui.motion.rememberReducedMotion
 
 @Composable
 fun SessionScreen(contentPadding: PaddingValues, onFinish: () -> Unit) {
@@ -50,7 +59,7 @@ fun SessionScreen(contentPadding: PaddingValues, onFinish: () -> Unit) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     SessionScreen(
         uiState = uiState,
-        onReveal = viewModel::reveal,
+        onToggleReveal = viewModel::toggleReveal,
         onGrade = viewModel::grade,
         onReviewMisses = viewModel::reviewMisses,
         onFinish = onFinish,
@@ -61,7 +70,7 @@ fun SessionScreen(contentPadding: PaddingValues, onFinish: () -> Unit) {
 @Composable
 internal fun SessionScreen(
     uiState: SessionUiState,
-    onReveal: () -> Unit,
+    onToggleReveal: () -> Unit,
     onGrade: (Grade) -> Unit,
     onReviewMisses: () -> Unit,
     onFinish: () -> Unit,
@@ -83,7 +92,7 @@ internal fun SessionScreen(
             SessionUiState.Empty -> EmptySession(onFinish = onFinish)
             is SessionUiState.Reviewing -> Review(
                 uiState = uiState,
-                onReveal = onReveal,
+                onToggleReveal = onToggleReveal,
                 onGrade = onGrade,
                 onEnd = onFinish,
             )
@@ -99,10 +108,16 @@ internal fun SessionScreen(
 @Composable
 private fun ColumnScope.Review(
     uiState: SessionUiState.Reviewing,
-    onReveal: () -> Unit,
+    onToggleReveal: () -> Unit,
     onGrade: (Grade) -> Unit,
     onEnd: () -> Unit,
 ) {
+    val reducedMotion = rememberReducedMotion()
+    // The swipe belongs to the Card in hand and to no other: keying on it drops the drag, the
+    // hints, and the "already graded" latch the moment the next Card arrives.
+    val swipe = key(uiState.card.id) {
+        rememberCardSwipe(reducedMotion = reducedMotion, onGrade = onGrade)
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -140,7 +155,14 @@ private fun ColumnScope.Review(
             .padding(horizontal = 20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
     ) {
-        ReviewCard(uiState = uiState, onReveal = onReveal)
+        ReviewCard(uiState = uiState, swipe = swipe, onToggleReveal = onToggleReveal)
+        Text(
+            text = stringResource(R.string.session_swipe_hint),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
     Row(
         modifier = Modifier
@@ -148,14 +170,16 @@ private fun ColumnScope.Review(
             .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 20.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        // The buttons are the same door as the swipe, not a second one: they hand the Grade to
+        // the same place, so a Card can only leave once however the user sent it away.
         OutlinedButton(
-            onClick = { onGrade(Grade.AGAIN) },
+            onClick = { swipe.grade(Grade.AGAIN) },
             modifier = Modifier.weight(1f),
         ) {
             Text(stringResource(R.string.session_again))
         }
         Button(
-            onClick = { onGrade(Grade.KNEW_IT) },
+            onClick = { swipe.grade(Grade.KNEW_IT) },
             modifier = Modifier.weight(1f),
         ) {
             Text(stringResource(R.string.session_knew_it))
@@ -166,39 +190,104 @@ private fun ColumnScope.Review(
 /**
  * The Front alone until the user taps. Reading the Back before attempting recall is the one
  * way to get nothing out of a Session, so revealing has to be something they choose to do.
+ *
+ * The Card is also the control: dragged far enough either way it Grades itself, and says which
+ * way it is heading the whole time it is being dragged.
  */
 @Composable
-private fun ReviewCard(uiState: SessionUiState.Reviewing, onReveal: () -> Unit) {
+private fun ReviewCard(
+    uiState: SessionUiState.Reviewing,
+    swipe: CardSwipe,
+    onToggleReveal: () -> Unit,
+) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(enabled = !uiState.revealed, onClick = onReveal),
-    ) {
-        // Tall enough to be worth tapping and to keep the Card from resizing as the Back
-        // appears, but sized to what it says rather than to the screen.
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = ReviewCardHeight)
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
-        ) {
-            Text(text = uiState.card.front, style = MaterialTheme.typography.headlineMedium)
-            if (uiState.revealed) {
-                HorizontalDivider()
-                Text(text = uiState.card.back, style = MaterialTheme.typography.bodyLarge)
-            } else {
-                Text(
-                    text = stringResource(R.string.session_tap_to_reveal),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            .onSizeChanged { swipe.cardWidth = it.width.toFloat() }
+            .graphicsLayer {
+                translationX = swipe.translation
+                rotationZ = swipe.rotation
+                alpha = swipe.alpha
             }
+            // Movement under the tap distance never reaches here — it is a click, and lands on
+            // the same reveal the gesture would have chosen.
+            .clickable(onClick = onToggleReveal)
+            .pointerInput(swipe) {
+                detectHorizontalDragGestures(
+                    onDragEnd = { swipe.release(onTap = onToggleReveal) },
+                    onDragCancel = { swipe.cancel() },
+                    onHorizontalDrag = { change, delta ->
+                        change.consume()
+                        swipe.drag(delta)
+                    },
+                )
+            },
+    ) {
+        Box {
+            // Tall enough to be worth tapping and to keep the Card from resizing as the Back
+            // appears, but sized to what it says rather than to the screen.
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = ReviewCardHeight)
+                    .padding(horizontal = 24.dp, vertical = 32.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
+            ) {
+                Text(text = uiState.card.front, style = MaterialTheme.typography.headlineMedium)
+                if (uiState.revealed) {
+                    HorizontalDivider()
+                    Text(text = uiState.card.back, style = MaterialTheme.typography.bodyLarge)
+                } else {
+                    Text(
+                        text = stringResource(R.string.session_tap_to_reveal),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            GradeHint(
+                text = stringResource(R.string.session_again),
+                alpha = { swipe.hintAlpha(Grade.AGAIN) },
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.align(Alignment.TopStart),
+            )
+            GradeHint(
+                text = stringResource(R.string.session_knew_it),
+                alpha = { swipe.hintAlpha(Grade.KNEW_IT) },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.align(Alignment.TopEnd),
+            )
         }
     }
+}
+
+/**
+ * The Grade a drag is heading towards, fading in as it gets there. It is what makes a swipe
+ * safe to start: the verdict is visible while there is still time to change it.
+ */
+@Composable
+private fun GradeHint(
+    text: String,
+    alpha: () -> Float,
+    containerColor: Color,
+    contentColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = contentColor,
+        modifier = modifier
+            .padding(16.dp)
+            .graphicsLayer { this.alpha = alpha() }
+            .background(color = containerColor, shape = CircleShape)
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+    )
 }
 
 @Composable

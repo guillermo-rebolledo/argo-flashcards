@@ -75,16 +75,27 @@ class SessionViewModelTest {
 
         assertFalse(viewModel.reviewing().revealed)
 
-        viewModel.reveal()
+        viewModel.toggleReveal()
 
         assertTrue(viewModel.reviewing().revealed)
+    }
+
+    @Test
+    fun `a second tap puts the Card face down again`() = runTest {
+        addCards(3)
+        val viewModel = viewModel()
+        viewModel.toggleReveal()
+
+        viewModel.toggleReveal()
+
+        assertFalse(viewModel.reviewing().revealed)
     }
 
     @Test
     fun `the next Card starts face down again`() = runTest {
         addCards(3)
         val viewModel = viewModel()
-        viewModel.reveal()
+        viewModel.toggleReveal()
 
         viewModel.grade(Grade.KNEW_IT)
 
