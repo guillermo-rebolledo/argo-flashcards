@@ -83,22 +83,21 @@ internal fun SettingsScreen(
 }
 
 /**
- * Reduced motion the user can turn on, and cannot turn off while their device is asking for
- * it — so the row says why rather than swallowing the tap. The switch reads on either way,
- * because it describes what the app is doing, not which setting said so.
+ * The switch shows the user's own answer and nothing else, so a device that has motion off
+ * today cannot record a preference on their behalf that surprises them when they turn it back
+ * on. That the system is already asking for reduced motion is said in the supporting line,
+ * where it belongs — it is context, not the state of this control.
  */
 @Composable
 private fun ReducedMotionRow(override: Boolean, onSet: (Boolean) -> Unit) {
-    val system = rememberSystemReducedMotion()
     SettingRow(
         title = stringResource(R.string.settings_reduced_motion),
-        body = if (system) {
+        body = if (rememberSystemReducedMotion()) {
             stringResource(R.string.settings_reduced_motion_system)
         } else {
             stringResource(R.string.settings_reduced_motion_body)
         },
-        checked = system || override,
-        enabled = !system,
+        checked = override,
         onCheckedChange = onSet,
     )
 }
@@ -119,7 +118,6 @@ private fun SettingRow(
     body: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
-    enabled: Boolean = true,
 ) {
     Row(
         modifier = Modifier
@@ -136,7 +134,7 @@ private fun SettingRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange, enabled = enabled)
+        Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 

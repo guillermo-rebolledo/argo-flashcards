@@ -86,7 +86,8 @@
     <string name="settings_focus">Focus</string>
     <string name="settings_reduced_motion">Reduced motion</string>
     <string name="settings_reduced_motion_body">Cards change without sliding or rotating</string>
-    <!-- Shown instead of the line above when the toggle is on but not because it was tapped. -->
+    <!-- Replaces the line above when the device is already asking for reduced motion, so the
+         toggle sitting off next to still Cards reads as explained rather than as broken. -->
     <string name="settings_reduced_motion_system">Already on in your device\'s accessibility settings</string>
     <string name="settings_session_length">Session length</string>
     <!-- Why there are three chips and not a number field: the end has to stay in sight. -->
