@@ -32,6 +32,7 @@ fun summarizeProgress(
         ProgressDay(date = date, studied = date in studiedDays)
     }
     val thisWeek = sessions.filter { dayOf(it) >= week.first().date }
+    val decksThisWeek = decksThisWeek(thisWeek, deckNames)
 
     return ProgressSummary(
         dayStreak = dayStreak(studiedDays, today),
@@ -42,8 +43,10 @@ fun summarizeProgress(
         minutes = thisWeek.fold(Duration.ZERO) { total, session -> total + session.duration }
             .toMinutes()
             .toInt(),
-        decksTouched = thisWeek.mapNotNull(Session::deckId).distinct().size,
-        decks = decksThisWeek(thisWeek, deckNames),
+        // Counted off the list below rather than off the rows, so the tile and the list the
+        // user reads it against can never say different numbers.
+        decksTouched = decksThisWeek.size,
+        decks = decksThisWeek,
         skippedDay = skippedDay(week, startedOn = studiedDays.minOrNull()),
     )
 }

@@ -1,6 +1,7 @@
 package dev.memoji.flashcards.core.domain
 
 import dev.memoji.flashcards.core.model.ProgressDay
+import dev.memoji.flashcards.core.model.ProgressSummary
 import dev.memoji.flashcards.core.model.Session
 import dev.memoji.flashcards.core.testing.MutableClock
 import java.time.Clock
@@ -12,6 +13,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZoneOffset
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -75,22 +77,42 @@ class ProgressTest {
         val summary = summarize(listOf(session))
 
         assertEquals(1, summary.dayStreak)
-        assertEquals(listOf(today.minusDays(1)), summary.week.filter(ProgressDay::studied).map { it.date })
+        assertEquals(listOf(today.minusDays(1)), studiedDates(summary))
     }
 
     /**
      * The whole log moves together when the phone changes zone, so a run of daily Sessions is
-     * still a run of daily Sessions after the flight.
+     * still a run of daily Sessions after the flight — even at hours where the flight really
+     * does move each Session onto a different date.
      */
     @Test
     fun `a streak holds across a change of timezone`() {
-        val sessions = sessionsOn(daysAgo = listOf(0, 1, 2, 3))
+        // Late evening in UTC, which is the following morning in Tokyo: every one of these
+        // Sessions lands on a different date read from there than read from here.
+        val sessions = listOf(1, 2, 3).map { session(at(daysAgo = it, hour = 22), TWO_MINUTES) }
 
+        val inUtc = summarize(sessions, clock = fixedClock(ZoneOffset.UTC))
         val inTokyo = summarize(sessions, clock = fixedClock(ZoneId.of("Asia/Tokyo")))
         val inSantiago = summarize(sessions, clock = fixedClock(ZoneId.of("America/Santiago")))
 
-        assertEquals(4, inTokyo.dayStreak)
-        assertEquals(4, inSantiago.dayStreak)
+        assertEquals(3, inUtc.dayStreak)
+        assertEquals(3, inTokyo.dayStreak)
+        assertEquals(3, inSantiago.dayStreak)
+        // The dates really did move — the streak held anyway, which is the point.
+        assertNotEquals(studiedDates(inUtc), studiedDates(inTokyo))
+    }
+
+    /** Midnight is the device's midnight, not UTC's. */
+    @Test
+    fun `the day a Session belongs to is the day it was in the clock's zone`() {
+        // Eight in the evening in UTC is five in the morning of the next day in Tokyo.
+        val evening = listOf(session(at(daysAgo = 1, hour = 20), TWO_MINUTES))
+
+        val inUtc = summarize(evening, clock = fixedClock(ZoneOffset.UTC))
+        val inTokyo = summarize(evening, clock = fixedClock(ZoneId.of("Asia/Tokyo")))
+
+        assertEquals(listOf(today.minusDays(1)), studiedDates(inUtc))
+        assertEquals(listOf(today), studiedDates(inTokyo))
     }
 
     @Test
@@ -217,7 +239,10 @@ class ProgressTest {
 
     /** One Session on each of the given days, all at nine in the morning. */
     private fun sessionsOn(daysAgo: List<Int>): List<Session> =
-        daysAgo.map { session(at(daysAgo = it), Duration.ofMinutes(2)) }
+        daysAgo.map { session(at(daysAgo = it), TWO_MINUTES) }
+
+    private fun studiedDates(summary: ProgressSummary): List<LocalDate> =
+        summary.week.filter(ProgressDay::studied).map(ProgressDay::date)
 
     private fun at(daysAgo: Int, hour: Int = 9, minute: Int = 0): Instant =
         LocalDateTime.of(today.minusDays(daysAgo.toLong()), LocalTime.of(hour, minute))
@@ -244,5 +269,8 @@ class ProgressTest {
 
     private companion object {
         const val DECK_ID = 1L
+
+        /** Long enough to be a Session, short enough that no cap comes into it. */
+        val TWO_MINUTES: Duration = Duration.ofMinutes(2)
     }
 }

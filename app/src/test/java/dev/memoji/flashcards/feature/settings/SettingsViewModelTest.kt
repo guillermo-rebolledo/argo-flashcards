@@ -81,14 +81,14 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `the hide-streak toggle stores both positions`() = runTest {
+    fun `the hide-day-streak toggle stores both positions`() = runTest {
         val viewModel = watchedViewModel()
 
-        viewModel.setHideStreak(true)
-        assertTrue(viewModel.uiState.value.hideStreak)
+        viewModel.setHideDayStreak(true)
+        assertTrue(viewModel.uiState.value.hideDayStreak)
 
-        viewModel.setHideStreak(false)
-        assertFalse(viewModel.uiState.value.hideStreak)
+        viewModel.setHideDayStreak(false)
+        assertFalse(viewModel.uiState.value.hideDayStreak)
     }
 
     /**

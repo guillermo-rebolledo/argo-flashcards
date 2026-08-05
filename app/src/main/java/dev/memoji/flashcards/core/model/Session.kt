@@ -31,9 +31,11 @@ data class Session(
 
     companion object {
         /**
-         * The longest Session the app offers is 10 Cards, and a Card a user is actually thinking
-         * about takes well under a minute. Anything past this is a phone that was put down.
+         * The longest sitting the app can produce is 10 Cards and a pass over the Misses, and a
+         * Card a user is actually thinking about takes well under a minute. Set with room to
+         * spare above that, because the cost of clipping a real sitting is a minute the user
+         * did study going unrecorded — while anything past this is a phone in a pocket.
          */
-        val MAX_DURATION: Duration = Duration.ofMinutes(10)
+        val MAX_DURATION: Duration = Duration.ofMinutes(20)
     }
 }

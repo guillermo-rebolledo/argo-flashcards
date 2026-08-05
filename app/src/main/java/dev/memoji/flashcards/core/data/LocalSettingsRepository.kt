@@ -29,7 +29,7 @@ internal class LocalSettingsRepository @Inject constructor(
                 ?: SessionLength.DEFAULT,
             theme = stored[THEME]?.let(ThemePreference::ofName) ?: ThemePreference.DEFAULT,
             reducedMotion = stored[REDUCED_MOTION] ?: UserSettings.DEFAULT.reducedMotion,
-            hideStreak = stored[HIDE_STREAK] ?: UserSettings.DEFAULT.hideStreak,
+            hideDayStreak = stored[HIDE_DAY_STREAK] ?: UserSettings.DEFAULT.hideDayStreak,
         )
     }
 
@@ -45,14 +45,14 @@ internal class LocalSettingsRepository @Inject constructor(
         preferences.edit { it[REDUCED_MOTION] = reducedMotion }
     }
 
-    override suspend fun setHideStreak(hideStreak: Boolean) {
-        preferences.edit { it[HIDE_STREAK] = hideStreak }
+    override suspend fun setHideDayStreak(hideDayStreak: Boolean) {
+        preferences.edit { it[HIDE_DAY_STREAK] = hideDayStreak }
     }
 
     private companion object {
         val SESSION_LENGTH = intPreferencesKey("session_length")
         val THEME = stringPreferencesKey("theme")
         val REDUCED_MOTION = booleanPreferencesKey("reduced_motion")
-        val HIDE_STREAK = booleanPreferencesKey("hide_streak")
+        val HIDE_DAY_STREAK = booleanPreferencesKey("hide_day_streak")
     }
 }

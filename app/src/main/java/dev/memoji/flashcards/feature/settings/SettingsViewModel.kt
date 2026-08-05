@@ -49,8 +49,8 @@ internal class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setReducedMotion(reducedMotion) }
     }
 
-    fun setHideStreak(hideStreak: Boolean) {
-        viewModelScope.launch { settingsRepository.setHideStreak(hideStreak) }
+    fun setHideDayStreak(hideDayStreak: Boolean) {
+        viewModelScope.launch { settingsRepository.setHideDayStreak(hideDayStreak) }
     }
 
     private companion object {

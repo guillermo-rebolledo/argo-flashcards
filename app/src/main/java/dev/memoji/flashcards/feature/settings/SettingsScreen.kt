@@ -38,7 +38,7 @@ fun SettingsScreen(contentPadding: PaddingValues) {
         onSetSessionLength = viewModel::setSessionLength,
         onSetDarkTheme = viewModel::setDarkTheme,
         onSetReducedMotion = viewModel::setReducedMotion,
-        onSetHideStreak = viewModel::setHideStreak,
+        onSetHideDayStreak = viewModel::setHideDayStreak,
         contentPadding = contentPadding,
     )
 }
@@ -49,7 +49,7 @@ internal fun SettingsScreen(
     onSetSessionLength: (SessionLength) -> Unit,
     onSetDarkTheme: (Boolean) -> Unit,
     onSetReducedMotion: (Boolean) -> Unit,
-    onSetHideStreak: (Boolean) -> Unit,
+    onSetHideDayStreak: (Boolean) -> Unit,
     contentPadding: PaddingValues,
 ) {
     Column(
@@ -71,8 +71,8 @@ internal fun SettingsScreen(
         SettingRow(
             title = stringResource(R.string.settings_hide_streak),
             body = stringResource(R.string.settings_hide_streak_body),
-            checked = uiState.hideStreak,
-            onCheckedChange = onSetHideStreak,
+            checked = uiState.hideDayStreak,
+            onCheckedChange = onSetHideDayStreak,
         )
         SessionLengthChips(selected = uiState.sessionLength, onSelect = onSetSessionLength)
 

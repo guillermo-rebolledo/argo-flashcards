@@ -72,14 +72,14 @@ class ProgressViewModelTest {
     @Test
     fun `with the streak hidden the screen still shows what was studied`() = runTest {
         val deckId = deckRepository.createDeck("Big-O notation")
-        settingsRepository.setHideStreak(true)
+        settingsRepository.setHideDayStreak(true)
         val viewModel = watchedViewModel()
 
         clock.advanceOneMinute()
         sessionRepository.recordSession(deckId, MutableClock.START, cardsReviewed = 5, knewIt = 3)
 
         val state = viewModel.summary()
-        assertTrue(state.hideStreak)
+        assertTrue(state.hideDayStreak)
         assertEquals(5, state.summary.cardsReviewed)
     }
 
@@ -91,9 +91,9 @@ class ProgressViewModelTest {
         clock.advanceOneMinute()
         sessionRepository.recordSession(deckId, MutableClock.START, cardsReviewed = 5, knewIt = 3)
 
-        settingsRepository.setHideStreak(true)
+        settingsRepository.setHideDayStreak(true)
 
-        assertTrue(viewModel.summary().hideStreak)
+        assertTrue(viewModel.summary().hideDayStreak)
     }
 
     /**

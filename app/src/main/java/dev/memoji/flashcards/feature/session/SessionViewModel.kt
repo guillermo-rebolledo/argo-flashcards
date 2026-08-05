@@ -55,12 +55,12 @@ internal class SessionViewModel @Inject constructor(
     private val startedAt: Instant = clock.instant()
 
     /**
-     * Everything Graded since then, the pass over the Misses included. The user sat down once,
-     * so the log gets one row — [knewIt] is the first pass alone and is what the score is
-     * counted from, which is a different question.
+     * What the passes before this one came to. [position] and [knewIt] are the pass in hand and
+     * are reset by each one, because the score on the results screen is that pass alone; the
+     * sitting is all of them, and is what the Session log records.
      */
-    private var reviewedInSitting = 0
-    private var knewItInSitting = 0
+    private var carriedReviewed = 0
+    private var carriedKnewIt = 0
     private var recorded = false
 
     init {
@@ -90,13 +90,9 @@ internal class SessionViewModel @Inject constructor(
         val card = reviewing.card
 
         when (grade) {
-            Grade.KNEW_IT -> {
-                knewIt++
-                knewItInSitting++
-            }
+            Grade.KNEW_IT -> knewIt++
             Grade.AGAIN -> misses += card
         }
-        reviewedInSitting++
         // Deliberately not `viewModelScope`: the user can leave the moment they have graded,
         // and a Grade that is dropped because the screen went away is the silent data loss
         // this whole feature is meant to avoid.
@@ -128,14 +124,17 @@ internal class SessionViewModel @Inject constructor(
     /**
      * Writes the sitting to the Session log, once. Called when the screen goes away rather than
      * from a button, because every way out of a Session is the same sitting ending: Done, the
-     * close button, the system Back, and the app being swiped away all arrive here. A Session
-     * nobody Graded a Card in is not a sitting and leaves no row.
+     * close button, and the system Back all arrive here, and none of them needs to remember to.
+     *
+     * The process being killed does not, and no row is written for a Session that ends that
+     * way — the Grades themselves are already on disk, which is the part that would be missed.
+     * A Session nobody Graded a Card in is not a sitting and leaves no row either.
      */
-    internal fun recordSession() {
-        if (recorded || reviewedInSitting == 0) return
+    fun recordSession() {
+        val reviewed = carriedReviewed + position
+        if (recorded || reviewed == 0) return
         recorded = true
-        val reviewed = reviewedInSitting
-        val knewIt = knewItInSitting
+        val knewIt = carriedKnewIt + this.knewIt
         // As with a Grade, deliberately not `viewModelScope`: by the time this runs the screen
         // is already on its way out, and the scope with it.
         applicationScope.launch {
@@ -148,6 +147,11 @@ internal class SessionViewModel @Inject constructor(
     }
 
     private fun begin(session: List<Card>) {
+        // Whatever the pass just finished came to goes into the sitting's running total before
+        // the counters that hold it are reset under the next pass.
+        carriedReviewed += position
+        carriedKnewIt += knewIt
+
         cards = session
         position = 0
         knewIt = 0

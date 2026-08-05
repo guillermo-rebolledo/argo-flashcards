@@ -42,7 +42,7 @@ internal class ProgressViewModel @Inject constructor(
                     deckNames = decks.associate { it.deck.id to it.deck.name },
                     clock = clock,
                 ),
-                hideStreak = settings.hideStreak,
+                hideDayStreak = settings.hideDayStreak,
             )
         }
     }.stateIn(

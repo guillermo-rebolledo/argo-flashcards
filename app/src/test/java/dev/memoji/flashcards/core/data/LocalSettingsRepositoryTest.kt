@@ -80,13 +80,13 @@ class LocalSettingsRepositoryTest {
     }
 
     @Test
-    fun `the hide-streak setting round-trips both ways`() = runTest {
+    fun `the hide-day-streak setting round-trips both ways`() = runTest {
         withSettings { settings ->
-            settings.setHideStreak(true)
-            assertTrue(settings.observeSettings().first().hideStreak)
+            settings.setHideDayStreak(true)
+            assertTrue(settings.observeSettings().first().hideDayStreak)
 
-            settings.setHideStreak(false)
-            assertFalse(settings.observeSettings().first().hideStreak)
+            settings.setHideDayStreak(false)
+            assertFalse(settings.observeSettings().first().hideDayStreak)
         }
     }
 
@@ -97,14 +97,14 @@ class LocalSettingsRepositoryTest {
             settings.setSessionLength(SessionLength.LONG)
             settings.setTheme(ThemePreference.LIGHT)
             settings.setReducedMotion(true)
-            settings.setHideStreak(true)
+            settings.setHideDayStreak(true)
 
             assertEquals(
                 UserSettings(
                     sessionLength = SessionLength.LONG,
                     theme = ThemePreference.LIGHT,
                     reducedMotion = true,
-                    hideStreak = true,
+                    hideDayStreak = true,
                 ),
                 settings.observeSettings().first(),
             )
@@ -117,7 +117,7 @@ class LocalSettingsRepositoryTest {
             settings.setSessionLength(SessionLength.SHORT)
             settings.setTheme(ThemePreference.DARK)
             settings.setReducedMotion(true)
-            settings.setHideStreak(true)
+            settings.setHideDayStreak(true)
         }
 
         withSettings { settings ->
@@ -126,7 +126,7 @@ class LocalSettingsRepositoryTest {
                     sessionLength = SessionLength.SHORT,
                     theme = ThemePreference.DARK,
                     reducedMotion = true,
-                    hideStreak = true,
+                    hideDayStreak = true,
                 ),
                 settings.observeSettings().first(),
             )

@@ -25,5 +25,5 @@ interface SettingsRepository {
 
     suspend fun setReducedMotion(reducedMotion: Boolean)
 
-    suspend fun setHideStreak(hideStreak: Boolean)
+    suspend fun setHideDayStreak(hideDayStreak: Boolean)
 }

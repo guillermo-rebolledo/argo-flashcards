@@ -13,12 +13,12 @@ internal sealed interface ProgressUiState {
     data object Empty : ProgressUiState
 
     /**
-     * [hideStreak] takes the streak and the seven-day grid off the screen — and with them the
+     * [hideDayStreak] takes the streak and the seven-day grid off the screen — and with them the
      * line about the day that was skipped, which is only meaningful next to a streak. What is
      * left is what the user did, with nothing counting up.
      */
     data class Summary(
         val summary: ProgressSummary,
-        val hideStreak: Boolean,
+        val hideDayStreak: Boolean,
     ) : ProgressUiState
 }

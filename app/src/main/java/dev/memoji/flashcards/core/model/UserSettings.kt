@@ -23,7 +23,7 @@ data class UserSettings(
      * finds a counter something to lose rather than something to keep — the app is not allowed
      * to become another thing keeping score.
      */
-    val hideStreak: Boolean = false,
+    val hideDayStreak: Boolean = false,
 ) {
     companion object {
         val DEFAULT = UserSettings()

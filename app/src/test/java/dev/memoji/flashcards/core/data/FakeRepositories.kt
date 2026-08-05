@@ -179,7 +179,7 @@ internal class FakeSettingsRepository : SettingsRepository {
         settings.value = settings.value.copy(reducedMotion = reducedMotion)
     }
 
-    override suspend fun setHideStreak(hideStreak: Boolean) {
-        settings.value = settings.value.copy(hideStreak = hideStreak)
+    override suspend fun setHideDayStreak(hideDayStreak: Boolean) {
+        settings.value = settings.value.copy(hideDayStreak = hideDayStreak)
     }
 }

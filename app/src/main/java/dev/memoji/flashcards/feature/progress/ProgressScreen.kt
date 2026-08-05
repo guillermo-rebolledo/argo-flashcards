@@ -60,13 +60,17 @@ internal fun ProgressScreen(uiState: ProgressUiState, contentPadding: PaddingVal
         // screen that fills in on the next one.
         ProgressUiState.Loading -> Unit
         ProgressUiState.Empty -> Empty(contentPadding)
-        is ProgressUiState.Summary -> Summary(uiState = uiState, contentPadding = contentPadding)
+        is ProgressUiState.Summary -> Studied(state = uiState, contentPadding = contentPadding)
     }
 }
 
 @Composable
-private fun Summary(uiState: ProgressUiState.Summary, contentPadding: PaddingValues) {
-    val summary = uiState.summary
+private fun Studied(state: ProgressUiState.Summary, contentPadding: PaddingValues) {
+    val summary = state.summary
+    // The streak, the grid, and the line about the day that was missed go together: they are
+    // one thing, a count of days, and a screen asked to stop counting must not still be
+    // pointing at the day the user skipped.
+    val showDayStreak = !state.hideDayStreak
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -75,8 +79,8 @@ private fun Summary(uiState: ProgressUiState.Summary, contentPadding: PaddingVal
     ) {
         ScreenTitle()
 
-        if (!uiState.hideStreak) {
-            StreakCard(dayStreak = summary.dayStreak, week = summary.week)
+        if (showDayStreak) {
+            DayStreakCard(dayStreak = summary.dayStreak, week = summary.week)
         }
 
         SectionHeader(stringResource(R.string.progress_last_seven_days))
@@ -84,15 +88,22 @@ private fun Summary(uiState: ProgressUiState.Summary, contentPadding: PaddingVal
             modifier = Modifier.padding(16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Tile(summary.cardsReviewed, stringResource(R.string.progress_tile_cards))
-            Tile(summary.minutes, stringResource(R.string.progress_tile_minutes))
-            Tile(summary.decksTouched, stringResource(R.string.progress_tile_decks))
+            CountTile(
+                count = summary.cardsReviewed,
+                label = stringResource(R.string.progress_tile_cards),
+            )
+            CountTile(
+                count = summary.minutes,
+                label = stringResource(R.string.progress_tile_minutes),
+            )
+            CountTile(
+                count = summary.decksTouched,
+                label = stringResource(R.string.progress_tile_decks),
+            )
         }
 
-        // Hidden along with the streak: this is the streak holding a place, and a screen asked
-        // to stop counting must not still be pointing at the day that was missed.
         val skippedDay = summary.skippedDay
-        if (!uiState.hideStreak && skippedDay != null) {
+        if (showDayStreak && skippedDay != null) {
             SkippedDayCard(day = skippedDay)
         }
 
@@ -156,7 +167,7 @@ private fun SectionHeader(text: String) {
  * the user can switch off.
  */
 @Composable
-private fun StreakCard(dayStreak: Int, week: List<ProgressDay>) {
+private fun DayStreakCard(dayStreak: Int, week: List<ProgressDay>) {
     Surface(
         shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.primaryContainer,
@@ -241,7 +252,7 @@ private fun WeekRow(week: List<ProgressDay>) {
 }
 
 @Composable
-private fun RowScope.Tile(value: Int, label: String) {
+private fun RowScope.CountTile(count: Int, label: String) {
     Surface(
         shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -251,7 +262,7 @@ private fun RowScope.Tile(value: Int, label: String) {
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 16.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Text(text = value.toString(), style = MaterialTheme.typography.titleLarge)
+            Text(text = count.toString(), style = MaterialTheme.typography.titleLarge)
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
