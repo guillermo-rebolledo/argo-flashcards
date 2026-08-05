@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import dev.memoji.flashcards.R
 import dev.memoji.flashcards.core.generation.GeneratedCard
 import dev.memoji.flashcards.core.generation.GenerationFailure
+import dev.memoji.flashcards.core.generation.Source
 
 /**
  * A generated Card and whether it is Kept. Kept Cards become real Cards on save; the rest are
@@ -21,6 +22,12 @@ internal enum class FailureAction {
 
     /** Everything the user can just try again. */
     TRY_AGAIN,
+
+    /**
+     * The page did not open. Empties the box for the text the page would have held, which is
+     * the one thing that reliably works when a link does not.
+     */
+    PASTE_TEXT,
 
     /** Nothing to retry with — the text itself is what has to change. */
     NONE,
@@ -50,6 +57,9 @@ internal val GenerationFailure.copy: FailureCopy
             FailureCopy(R.string.generate_error_timeout, FailureAction.TRY_AGAIN)
         GenerationFailure.UNEXPECTED ->
             FailureCopy(R.string.generate_error_unexpected, FailureAction.TRY_AGAIN)
+        // The one failure the other flow is the answer to.
+        GenerationFailure.PAGE_UNREADABLE ->
+            FailureCopy(R.string.generate_error_page_unreadable, FailureAction.PASTE_TEXT)
         // Nothing to retry with — the material itself is what has to change.
         GenerationFailure.DECLINED ->
             FailureCopy(R.string.generate_error_declined, FailureAction.NONE)
@@ -67,6 +77,15 @@ internal sealed interface GenerateUiState {
         val text: String = "",
         val failure: GenerationFailure? = null,
     ) : GenerateUiState {
+
+        /**
+         * What the app made of what is in the box, shown before generating so the user can see
+         * it read a link as a link. It is the same call the request is built from, so the hint
+         * cannot promise one thing and the Generation do another.
+         */
+        val source: Source get() = Source.of(text)
+
+        val isLink: Boolean get() = source is Source.Url
 
         /** What the user can see they have given it. Whitespace of any kind separates words. */
         val wordCount: Int get() = if (text.isBlank()) 0 else text.trim().split(WHITESPACE).size

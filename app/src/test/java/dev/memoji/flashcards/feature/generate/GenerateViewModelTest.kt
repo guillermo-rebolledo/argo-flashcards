@@ -93,6 +93,50 @@ class GenerateViewModelTest {
         assertEquals(Source.PastedText("Big-O notation."), generator.lastSource)
     }
 
+    /**
+     * The user pastes into one box and the app decides which of the two it got. This is that
+     * decision arriving at the generator, which is where it changes what happens.
+     */
+    @Test
+    fun `a link is generated from as a link`() = runTest {
+        val viewModel = viewModel()
+        viewModel.setText("https://example.com/big-o")
+
+        viewModel.generate()
+
+        assertEquals(Source.Url("https://example.com/big-o"), generator.lastSource)
+    }
+
+    @Test
+    fun `a link missing its scheme is still a link`() = runTest {
+        val viewModel = viewModel()
+        viewModel.setText("www.example.com/big-o")
+
+        viewModel.generate()
+
+        assertEquals(Source.Url("https://www.example.com/big-o"), generator.lastSource)
+    }
+
+    /** Said before generating, so the user can see the app understood what they pasted. */
+    @Test
+    fun `a pasted link is announced as one`() {
+        val viewModel = viewModel()
+
+        viewModel.setText("https://example.com/big-o")
+
+        assertTrue(viewModel.entry().isLink)
+    }
+
+    @Test
+    fun `pasted text is not announced as a link`() {
+        val viewModel = viewModel()
+
+        viewModel.setText("Big-O notation describes how work grows.")
+
+        assertFalse(viewModel.entry().isLink)
+        assertEquals(6, viewModel.entry().wordCount)
+    }
+
     /** A wait with nothing on screen reads as the app having frozen. */
     @Test
     fun `the state says it is busy while a Generation is in flight`() = runTest {
@@ -309,6 +353,47 @@ class GenerateViewModelTest {
         viewModel.generate()
 
         assertEquals(FailureAction.NONE, viewModel.entry().failureCopy?.action)
+    }
+
+    /** Every one of them, from the other flow. A URL fails in all the same ways text does. */
+    @Test
+    fun `each failure comes back with its own reason for a link too`() = runTest {
+        GenerationFailure.entries.forEach { failure ->
+            val viewModel = viewModel()
+            viewModel.setText("https://example.com/big-o")
+            generator.failWith(failure)
+
+            viewModel.generate()
+
+            assertEquals(failure, viewModel.entry().failure)
+            assertEquals("https://example.com/big-o", viewModel.entry().text)
+        }
+    }
+
+    /** The failure the other flow is the answer to. */
+    @Test
+    fun `a page that could not be read offers the text instead`() = runTest {
+        val viewModel = viewModel()
+        viewModel.setText("https://example.com/paywalled")
+        generator.failWith(GenerationFailure.PAGE_UNREADABLE)
+
+        viewModel.generate()
+
+        assertEquals(FailureAction.PASTE_TEXT, viewModel.entry().failureCopy?.action)
+    }
+
+    @Test
+    fun `taking the offer empties the box for the text`() = runTest {
+        val viewModel = viewModel()
+        viewModel.setText("https://example.com/paywalled")
+        generator.failWith(GenerationFailure.PAGE_UNREADABLE)
+        viewModel.generate()
+
+        viewModel.pasteTextInstead()
+
+        assertEquals("", viewModel.entry().text)
+        assertNull(viewModel.entry().failure)
+        assertFalse(viewModel.entry().isLink)
     }
 
     @Test

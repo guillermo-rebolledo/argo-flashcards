@@ -1,13 +1,44 @@
 package dev.memoji.flashcards.core.generation
 
 /**
- * The raw material a Deck is generated from. Pasted text is the only Source the app takes
- * today; a URL is a member this gains later, which is why this is a sealed type over one case
- * rather than a bare `String`.
+ * The raw material a Deck is generated from: either pasted text or a URL. The user types into
+ * one box and the app decides which of the two it got — [of] is that decision, and it is made
+ * in one place so the hint shown before generating and the request sent after it cannot
+ * disagree about what was pasted.
  */
 sealed interface Source {
 
     data class PastedText(val text: String) : Source
+
+    /** [url] always carries a scheme, even when what the user pasted started at `www.`. */
+    data class Url(val url: String) : Source
+
+    companion object {
+
+        /**
+         * A string that looks like a link is treated as one. It is not checked for being
+         * reachable, or even for existing — that is the fetch's job, and its failure has its
+         * own message. All this decides is which of the two things the user meant.
+         */
+        fun of(input: String): Source {
+            val trimmed = input.trim()
+            val match = LINK.matchEntire(trimmed) ?: return PastedText(input)
+            // A link with no scheme is what a copied address bar or a spoken domain looks
+            // like. https, not http: every host worth reading from speaks it.
+            val scheme = match.groupValues[1]
+            return Url(if (scheme.isEmpty()) "https://$trimmed" else trimmed)
+        }
+
+        /**
+         * One token, a host with a real-looking suffix, and optionally a path. Deliberately
+         * strict about the host: prose that happens to end in a full stop is not a link, and
+         * being wrong in that direction costs the user a Generation.
+         */
+        private val LINK = Regex(
+            "(https?://)?(?:[\\w-]+\\.)+[a-z]{2,}(?::\\d+)?(?:[/?#]\\S*)?",
+            RegexOption.IGNORE_CASE,
+        )
+    }
 }
 
 /**
@@ -68,6 +99,13 @@ enum class GenerationFailure {
      * abstract to state in single sentences. A refusal is [DECLINED], not this.
      */
     NO_CARDS,
+
+    /**
+     * The page behind the URL could not be read: a paywall, a login wall, a 404, or a page
+     * that only exists once JavaScript has run. Only the URL flow can reach this, and the way
+     * out of it is the other flow — pasting the text.
+     */
+    PAGE_UNREADABLE,
 
     /**
      * Anything else the API can return: a 500, a 529, a status this version does not know. Not

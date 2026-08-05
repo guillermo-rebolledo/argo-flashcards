@@ -1,0 +1,15 @@
+# A page is read by the model, not by the app
+
+Generating a Deck from a URL sends the address to Anthropic and declares the `web_fetch` tool. The page is retrieved server-side and becomes the material for the same Generation pasted text would have produced. The device makes exactly one request, to the same endpoint it already used, and never speaks to the page's host at all.
+
+The prototype did the opposite: an HTTP client on the device, a redirect and encoding policy, an HTML parser, and a readability pass to get from a page of markup to the prose worth making Cards from. That is a lot of code to own, and all of it is the boring, wrong-most-of-the-time kind — every site is a new way for a heuristic extractor to pick the cookie banner over the article. It also puts the user's IP and headers in front of whatever they paste, which a bring-your-own-key app with no server has no reason to do.
+
+Letting the model fetch collapses that to a tool declaration. The extraction problem stops being ours: the model reads the whole page and decides what in it is worth remembering, which is the same judgement it is already making on pasted text.
+
+## Consequences
+
+- **Pages that only exist after JavaScript runs cannot be read.** The tool fetches; it does not render. This is a real hole — a single-page app's article is invisible to it — and it is why `PAGE_UNREADABLE` offers pasting the text rather than only apologising.
+- A failed fetch arrives inside a successful HTTP 200, as a tool result carrying an error code instead of a document. It has to be read out of the response before anything the model went on to say, or a page that never arrived surfaces as material that produced nothing.
+- Page content is capped with `max_content_tokens`. Generation is billed to the user's own key, and a URL is a much bigger blank cheque than a paste — a book behind one address would otherwise be a request the user did not know they were making.
+- The fetch tool is offered only when the Source is a URL, so a paste that happens to mention a link cannot turn into a page request nobody asked for. The tool will not fetch an address it has composed itself either — only ones already in the conversation.
+- The basic `web_fetch_20250910` is what is declared rather than a filtering version. Filtering trims a fetched page to what a question needs; here the whole page is the question, and the cap is what bounds it.

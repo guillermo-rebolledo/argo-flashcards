@@ -9,6 +9,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -59,6 +60,82 @@ class AnthropicCardGeneratorTest {
         assertTrue(body.contains("Big-O notation describes how work grows."))
         assertTrue(body.contains("json_schema"))
         assertTrue(body.contains("deck_name"))
+    }
+
+    /** The page is read by Anthropic, so the URL and the tool that reads it both go up. */
+    @Test
+    fun `a URL is sent with the fetch tool and a cap on what it may bring back`() = runTest {
+        server.enqueue(success(DECK_JSON))
+
+        generate(Source.Url("https://example.com/big-o"))
+
+        val body = server.takeRequest().body.readUtf8()
+        assertTrue(body.contains("https://example.com/big-o"))
+        assertTrue(body.contains("web_fetch"))
+        assertTrue(body.contains("max_content_tokens"))
+    }
+
+    /** A paste that mentions a link must not become a request to go and read it. */
+    @Test
+    fun `pasted text is sent with no tools at all`() = runTest {
+        server.enqueue(success(DECK_JSON))
+
+        generate("Read https://example.com for more.")
+
+        val body = server.takeRequest().body.readUtf8()
+        assertFalse(body.contains("tools"))
+    }
+
+    @Test
+    fun `a page that was read produces its Cards`() = runTest {
+        server.enqueue(success(DECK_JSON))
+
+        val generated = generate(Source.Url("https://example.com/big-o"))
+
+        assertEquals("Big-O notation", (generated as GenerationResult.Generated).deckName)
+    }
+
+    /** A Generation that went and read something can say so before it writes the Deck. */
+    @Test
+    fun `a Deck is found past whatever was said before it`() = runTest {
+        server.enqueue(
+            MockResponse().setResponseCode(200).setBody(
+                """{"stop_reason":"end_turn","content":[""" +
+                    """{"type":"text","text":"I will read that page."},""" +
+                    """{"type":"web_fetch_tool_result","tool_use_id":"srvtoolu_1",""" +
+                    """"content":{"type":"web_fetch_result","url":"https://example.com"}},""" +
+                    """{"type":"text","text":"$DECK_JSON"}]}""",
+            ),
+        )
+
+        val generated = generate(Source.Url("https://example.com/big-o"))
+
+        assertEquals("Big-O notation", (generated as GenerationResult.Generated).deckName)
+    }
+
+    /**
+     * A fetch that failed is not an error: it comes back inside a perfectly good answer, and
+     * the model carries on writing regardless. Reading it is what stops the user being told
+     * their material was no good when the truth is the page never arrived.
+     */
+    @Test
+    fun `a page that could not be read says so`() = runTest {
+        server.enqueue(fetchError("url_not_accessible"))
+
+        assertEquals(
+            failure(GenerationFailure.PAGE_UNREADABLE),
+            generate(Source.Url("https://example.com/paywalled")),
+        )
+    }
+
+    @Test
+    fun `a login wall reads the same way as any other unreadable page`() = runTest {
+        server.enqueue(fetchError("unsupported_content_type"))
+
+        assertEquals(
+            failure(GenerationFailure.PAGE_UNREADABLE),
+            generate(Source.Url("https://example.com/login")),
+        )
     }
 
     /** Nothing is sent anywhere until there is a key to send it with. */
@@ -173,10 +250,23 @@ class AnthropicCardGeneratorTest {
     }
 
     private suspend fun generate(text: String = "Big-O notation.") =
+        generate(Source.PastedText(text))
+
+    private suspend fun generate(source: Source) =
         AnthropicCardGenerator(apiKeyRepository, client, server.url("/v1/messages").toString())
-            .generate(Source.PastedText(text))
+            .generate(source)
 
     private fun failure(failure: GenerationFailure) = GenerationResult.Failed(failure)
+
+    /** What a fetch that did not work looks like: a 200, with the reason inside the answer. */
+    private fun fetchError(code: String) = MockResponse()
+        .setResponseCode(200)
+        .setBody(
+            """{"stop_reason":"end_turn","content":[""" +
+                """{"type":"web_fetch_tool_result","tool_use_id":"srvtoolu_1",""" +
+                """"content":{"type":"web_fetch_tool_result_error","error_code":"$code"}},""" +
+                """{"type":"text","text":"I could not read that page."}]}""",
+        )
 
     /** What the API returns: the Deck as JSON, inside a text block, inside the message. */
     private fun success(deckJson: String) = MockResponse()
