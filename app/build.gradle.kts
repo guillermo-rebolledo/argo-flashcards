@@ -37,8 +37,19 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    testOptions {
+        // Room needs a real SQLite and a Context, so the DAO tests run on Robolectric rather
+        // than on a device. Keeping them in `test` means `./gradlew test` covers persistence.
+        unitTests.isIncludeAndroidResources = true
+    }
 }
 
+ksp {
+    // The exported schema is checked in so later slices can write and verify real migrations
+    // against it. The database is the only record of a Deck; it never gets recreated.
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
 
 dependencies {
     implementation(platform(libs.androidx.compose.bom))
@@ -66,6 +77,8 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
 
+    testImplementation(libs.androidx.test.core)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.robolectric)
 }
