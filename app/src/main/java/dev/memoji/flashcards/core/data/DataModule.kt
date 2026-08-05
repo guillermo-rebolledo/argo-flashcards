@@ -25,4 +25,8 @@ internal abstract class DataModule {
     @Binds
     @Singleton
     abstract fun bindSettingsRepository(repository: LocalSettingsRepository): SettingsRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindApiKeyRepository(repository: EncryptedApiKeyRepository): ApiKeyRepository
 }

@@ -1,16 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- The one request the app makes: the Anthropic API, from the device. See ADR 0002. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <!--
-      Backup stays off until the ticket that stores the API key can turn it on together with
-      the rules that exclude the key from it. ADR 0002 requires Decks and Cards to be backed
-      up and the credential not to be; enabling backup before those rules exist would ship
-      the leak first and the rule second. allowBackup covers Android 11 and below,
-      dataExtractionRules covers 12 and above.
+      Backup is on now that there are rules to keep the API key out of it. Both files list
+      what goes rather than what stays, so a file added later is excluded until someone says
+      otherwise — the credential cannot be swept in by a rule nobody revisited. allowBackup
+      covers Android 11 and below, dataExtractionRules covers 12 and above.
     -->
     <application
         android:name=".FlashcardsApplication"
-        android:allowBackup="false"
+        android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"

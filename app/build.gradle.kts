@@ -2,6 +2,7 @@ plugins {
     // AGP 9 compiles Kotlin itself, so `org.jetbrains.kotlin.android` is not applied.
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
@@ -71,6 +72,11 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
+    // The one network call the app makes — the Anthropic Messages API, straight from the
+    // device with the user's own key. See ADR 0002 for why there is no backend to talk to.
+    implementation(libs.okhttp)
+    implementation(libs.kotlinx.serialization.json)
+
     // Established here so later slices only add entities and DAOs, not build wiring.
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
@@ -81,5 +87,6 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.robolectric)
 }

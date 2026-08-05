@@ -44,28 +44,20 @@ class DecksViewModelTest {
         assertEquals(DecksUiState.Empty, viewModel.uiState.value)
     }
 
+    /** Decks are made in the Add Cards flow now, so these arrive through the repository. */
     @Test
     fun `a created Deck lands in the state`() = runTest {
         val viewModel = watchedViewModel()
 
-        viewModel.createDeck("Big-O notation")
+        repository.createDeck("Big-O notation")
 
         assertEquals(listOf("Big-O notation"), viewModel.deckNames())
     }
 
     @Test
-    fun `a blank name creates nothing`() = runTest {
-        val viewModel = watchedViewModel()
-
-        viewModel.createDeck("   ")
-
-        assertEquals(DecksUiState.Empty, viewModel.uiState.value)
-    }
-
-    @Test
     fun `renaming a Deck shows the new name`() = runTest {
         val viewModel = watchedViewModel()
-        viewModel.createDeck("Big-O notaton")
+        repository.createDeck("Big-O notaton")
 
         viewModel.renameDeck(viewModel.deckIds().single(), "Big-O notation")
 
@@ -75,7 +67,7 @@ class DecksViewModelTest {
     @Test
     fun `a blank rename leaves the old name alone`() = runTest {
         val viewModel = watchedViewModel()
-        viewModel.createDeck("Git basics")
+        repository.createDeck("Git basics")
 
         viewModel.renameDeck(viewModel.deckIds().single(), " ")
 
@@ -85,7 +77,7 @@ class DecksViewModelTest {
     @Test
     fun `a deleted Deck leaves the state`() = runTest {
         val viewModel = watchedViewModel()
-        viewModel.createDeck("Doomed")
+        repository.createDeck("Doomed")
 
         viewModel.deleteDeck(viewModel.deckIds().single())
 
@@ -95,8 +87,8 @@ class DecksViewModelTest {
     @Test
     fun `Up next points at the Deck studied most recently`() = runTest {
         val viewModel = watchedViewModel()
-        viewModel.createDeck("Big-O notation")
-        viewModel.createDeck("Git basics")
+        repository.createDeck("Big-O notation")
+        repository.createDeck("Git basics")
         val bigO = viewModel.deckIds().last()
         cards.createCard(bigO, "O(1)", "Constant time.")
         cards.createCard(viewModel.deckIds().first(), "rebase", "Replays commits.")
@@ -110,8 +102,8 @@ class DecksViewModelTest {
     @Test
     fun `Up next falls back to the newest Deck with Cards`() = runTest {
         val viewModel = watchedViewModel()
-        viewModel.createDeck("Big-O notation")
-        viewModel.createDeck("Git basics")
+        repository.createDeck("Big-O notation")
+        repository.createDeck("Git basics")
         cards.createCard(viewModel.deckIds().last(), "O(1)", "Constant time.")
 
         assertEquals("Big-O notation", viewModel.state().upNext?.deck?.name)
@@ -121,7 +113,7 @@ class DecksViewModelTest {
     fun `Decks with no Cards yet have nothing to be up next`() = runTest {
         val viewModel = watchedViewModel()
 
-        viewModel.createDeck("Big-O notation")
+        repository.createDeck("Big-O notation")
 
         assertEquals(null, viewModel.state().upNext)
     }

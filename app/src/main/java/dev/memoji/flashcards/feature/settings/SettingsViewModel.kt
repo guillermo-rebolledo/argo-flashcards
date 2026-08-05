@@ -3,6 +3,7 @@ package dev.memoji.flashcards.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.memoji.flashcards.core.data.ApiKeyRepository
 import dev.memoji.flashcards.core.data.SettingsRepository
 import dev.memoji.flashcards.core.model.SessionLength
 import dev.memoji.flashcards.core.model.ThemePreference
@@ -10,8 +11,18 @@ import dev.memoji.flashcards.core.model.UserSettings
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/**
+ * What Settings shows: every preference, and whether a key is stored — never the key itself,
+ * which is read only when a Generation needs it.
+ */
+internal data class SettingsUiState(
+    val settings: UserSettings = UserSettings.DEFAULT,
+    val hasApiKey: Boolean = false,
+)
 
 /**
  * The Settings screen has no state of its own: what it shows is what is stored, and a write
@@ -21,16 +32,21 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 internal class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
+    private val apiKeyRepository: ApiKeyRepository,
 ) : ViewModel() {
 
-    val uiState: StateFlow<UserSettings> = settingsRepository.observeSettings()
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
-            // The defaults, not a loading state: every setting has an answer before the read
-            // finishes, and a Settings screen that blinks is worse than one that fills in.
-            initialValue = UserSettings.DEFAULT,
-        )
+    val uiState: StateFlow<SettingsUiState> = combine(
+        settingsRepository.observeSettings(),
+        apiKeyRepository.observeHasKey(),
+    ) { settings, hasApiKey ->
+        SettingsUiState(settings = settings, hasApiKey = hasApiKey)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS),
+        // The defaults, not a loading state: every setting has an answer before the read
+        // finishes, and a Settings screen that blinks is worse than one that fills in.
+        initialValue = SettingsUiState(),
+    )
 
     fun setSessionLength(length: SessionLength) {
         viewModelScope.launch { settingsRepository.setSessionLength(length) }
@@ -51,6 +67,16 @@ internal class SettingsViewModel @Inject constructor(
 
     fun setHideDayStreak(hideDayStreak: Boolean) {
         viewModelScope.launch { settingsRepository.setHideDayStreak(hideDayStreak) }
+    }
+
+    /** Blank is not a key: an empty box is nothing entered, not an instruction to clear. */
+    fun setApiKey(key: String) {
+        if (key.isBlank()) return
+        viewModelScope.launch { apiKeyRepository.setApiKey(key) }
+    }
+
+    fun clearApiKey() {
+        viewModelScope.launch { apiKeyRepository.clearApiKey() }
     }
 
     private companion object {

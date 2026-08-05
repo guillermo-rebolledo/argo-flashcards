@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Nothing leaves the device yet. ADR 0002 requires Decks and Cards to be backed up and the
-  API key not to be; the ticket that adds the key adds the include rules alongside it, so
-  until then both cloud backup and device transfer are empty rather than default-on.
+  ADR 0002: Decks and Cards are backed up, the API key is not. These rules name what goes
+  rather than what stays, so anything stored later is left out until someone adds it here —
+  the credential cannot be swept into a backup by a rule nobody revisited.
+
+  The key lives in `shared_prefs/credentials.xml`. Nothing in the `sharedpref` domain is
+  listed below, so it is not backed up — there is no exclude to state that, because an
+  exclude outside the include list is an error rather than a second lock.
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <exclude domain="root" path="." />
-        <exclude domain="file" path="." />
-        <exclude domain="database" path="." />
-        <exclude domain="sharedpref" path="." />
-        <exclude domain="external" path="." />
+        <!-- The Room database — the only record of a Deck. -->
+        <include domain="database" path="flashcards.db" />
+        <!-- The settings store. A preference is cheap to lose, but free to carry over. -->
+        <include domain="file" path="datastore" />
     </cloud-backup>
     <device-transfer>
-        <exclude domain="root" path="." />
-        <exclude domain="file" path="." />
-        <exclude domain="database" path="." />
-        <exclude domain="sharedpref" path="." />
-        <exclude domain="external" path="." />
+        <include domain="database" path="flashcards.db" />
+        <include domain="file" path="datastore" />
     </device-transfer>
 </data-extraction-rules>
