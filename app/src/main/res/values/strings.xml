@@ -55,8 +55,9 @@
     <string name="session_tap_to_reveal">Tap to reveal</string>
     <string name="session_again">Again</string>
     <string name="session_knew_it">Knew it</string>
-    <!-- Says the swipe exists at all: nothing on a Card suggests it can be thrown. -->
-    <string name="session_swipe_hint">Swipe left if it didn\'t stick, right if it did</string>
+    <!-- Says the swipe exists at all: nothing on a Card suggests it can be thrown. Names the
+         two Grades, so it reads as the buttons and the drag hints do. -->
+    <string name="session_swipe_hint">Swipe right for Knew it, left for Again</string>
     <string name="session_done_title">Session done</string>
     <!-- The score, not a count of anything: "3 of 5" remembered. -->
     <string name="session_score">%1$d of %2$d</string>

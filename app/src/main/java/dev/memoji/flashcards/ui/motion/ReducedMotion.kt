@@ -8,6 +8,7 @@ import android.provider.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 
 /**
@@ -20,7 +21,10 @@ import androidx.compose.ui.platform.LocalContext
 @Composable
 fun rememberReducedMotion(): Boolean {
     val resolver = LocalContext.current.contentResolver
-    val reduced by produceState(initialValue = isReducedMotion(resolver), resolver) {
+    // Read once, then only when it changes: this crosses to the settings provider, and a Card
+    // being dragged recomposes every frame.
+    val initial = remember(resolver) { isReducedMotion(resolver) }
+    val reduced by produceState(initialValue = initial, resolver) {
         val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
                 value = isReducedMotion(resolver)

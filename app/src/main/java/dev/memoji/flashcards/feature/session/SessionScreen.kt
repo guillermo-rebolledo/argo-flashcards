@@ -2,7 +2,8 @@ package dev.memoji.flashcards.feature.session
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,8 +42,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -212,18 +215,31 @@ private fun ReviewCard(
                 rotationZ = swipe.rotation
                 alpha = swipe.alpha
             }
-            // Movement under the tap distance never reaches here — it is a click, and lands on
-            // the same reveal the gesture would have chosen.
+            // A tap is left to the click, which is also the way in for anyone driving the
+            // screen by accessibility service rather than by finger.
             .clickable(onClick = onToggleReveal)
+            // Measured from where the finger landed rather than from where Compose decided a
+            // drag had begun, so the distances are the ones the design chose.
             .pointerInput(swipe) {
-                detectHorizontalDragGestures(
-                    onDragEnd = { swipe.release(onTap = onToggleReveal) },
-                    onDragCancel = { swipe.cancel() },
-                    onHorizontalDrag = { change, delta ->
-                        change.consume()
-                        swipe.drag(delta)
-                    },
-                )
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false)
+                    swipe.start()
+                    while (true) {
+                        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+                        if (change == null) {
+                            swipe.cancel()
+                            break
+                        }
+                        if (!change.pressed) {
+                            swipe.release()
+                            break
+                        }
+                        swipe.drag(change.positionChange().x)
+                        // Only once the Card owns the gesture: taking the movement any earlier
+                        // would take the tap with it.
+                        if (swipe.ownsGesture) change.consume()
+                    }
+                }
             },
     ) {
         Box {
@@ -283,6 +299,9 @@ private fun GradeHint(
         style = MaterialTheme.typography.labelLarge,
         color = contentColor,
         modifier = modifier
+            // It answers a drag, so it has nothing to say to a screen reader — which would
+            // otherwise read both Grades out of the Card on top of the buttons below it.
+            .clearAndSetSemantics {}
             .padding(16.dp)
             .graphicsLayer { this.alpha = alpha() }
             .background(color = containerColor, shape = CircleShape)

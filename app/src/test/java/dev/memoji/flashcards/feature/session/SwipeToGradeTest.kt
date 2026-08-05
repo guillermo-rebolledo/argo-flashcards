@@ -42,22 +42,22 @@ class SwipeToGradeTest {
 
     @Test
     fun `the Grade hint fades in over the drag towards it`() {
-        assertEquals(0f, hintAlpha(0f, Grade.KNEW_IT, CommitDistance), Tolerance)
-        assertEquals(0.5f, hintAlpha(45f, Grade.KNEW_IT, CommitDistance), Tolerance)
-        assertEquals(1f, hintAlpha(90f, Grade.KNEW_IT, CommitDistance), Tolerance)
+        assertEquals(0f, gradeHintAlpha(0f, Grade.KNEW_IT, CommitDistance), Tolerance)
+        assertEquals(0.5f, gradeHintAlpha(45f, Grade.KNEW_IT, CommitDistance), Tolerance)
+        assertEquals(1f, gradeHintAlpha(90f, Grade.KNEW_IT, CommitDistance), Tolerance)
     }
 
     @Test
     fun `the Grade hint does not fade past fully shown`() {
-        assertEquals(1f, hintAlpha(400f, Grade.KNEW_IT, CommitDistance), Tolerance)
-        assertEquals(1f, hintAlpha(-400f, Grade.AGAIN, CommitDistance), Tolerance)
+        assertEquals(1f, gradeHintAlpha(400f, Grade.KNEW_IT, CommitDistance), Tolerance)
+        assertEquals(1f, gradeHintAlpha(-400f, Grade.AGAIN, CommitDistance), Tolerance)
     }
 
     @Test
     fun `only the hint the drag is heading towards shows`() {
-        assertEquals(0f, hintAlpha(60f, Grade.AGAIN, CommitDistance), Tolerance)
-        assertEquals(0f, hintAlpha(-60f, Grade.KNEW_IT, CommitDistance), Tolerance)
-        assertEquals(0.5f, hintAlpha(-45f, Grade.AGAIN, CommitDistance), Tolerance)
+        assertEquals(0f, gradeHintAlpha(60f, Grade.AGAIN, CommitDistance), Tolerance)
+        assertEquals(0f, gradeHintAlpha(-60f, Grade.KNEW_IT, CommitDistance), Tolerance)
+        assertEquals(0.5f, gradeHintAlpha(-45f, Grade.AGAIN, CommitDistance), Tolerance)
     }
 
     private fun releaseOf(distance: Float) =
