@@ -55,6 +55,7 @@ fun DecksScreen(
     contentPadding: PaddingValues,
     onOpenDeck: (Long) -> Unit,
     onStartSession: (Long) -> Unit,
+    onAddCards: () -> Unit,
 ) {
     val viewModel: DecksViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -62,7 +63,7 @@ fun DecksScreen(
         uiState = uiState,
         onOpenDeck = onOpenDeck,
         onStartSession = onStartSession,
-        onCreateDeck = viewModel::createDeck,
+        onAddCards = onAddCards,
         onRenameDeck = viewModel::renameDeck,
         onDeleteDeck = viewModel::deleteDeck,
         contentPadding = contentPadding,
@@ -74,14 +75,13 @@ internal fun DecksScreen(
     uiState: DecksUiState,
     onOpenDeck: (Long) -> Unit,
     onStartSession: (Long) -> Unit,
-    onCreateDeck: (String) -> Unit,
+    onAddCards: () -> Unit,
     onRenameDeck: (Long, String) -> Unit,
     onDeleteDeck: (Long) -> Unit,
     contentPadding: PaddingValues,
 ) {
     // Held by id rather than by Deck, so a dialog left open across a rotation reopens against
     // whatever that Deck says now, and closes by itself if the Deck is gone.
-    var creating by rememberSaveable { mutableStateOf(false) }
     var renamingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var deletingId by rememberSaveable { mutableStateOf<Long?>(null) }
 
@@ -123,28 +123,17 @@ internal fun DecksScreen(
         }
 
         // Shown while loading too: the empty screen this lands on is the one the user has to
-        // be able to act from, and it must not arrive a frame after the screen does.
+        // be able to act from, and it must not arrive a frame after the screen does. It opens
+        // the Add Cards flow, which is where both a generated Deck and a hand-written one
+        // start — the design has one button here, not two.
         ExtendedFloatingActionButton(
-            onClick = { creating = true },
+            onClick = onAddCards,
             icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-            text = { Text(stringResource(R.string.decks_new_deck)) },
+            text = { Text(stringResource(R.string.decks_add_cards)) },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = bottomPadding)
                 .padding(16.dp),
-        )
-    }
-
-    if (creating) {
-        DeckNameDialog(
-            title = stringResource(R.string.decks_new_deck),
-            confirmLabel = stringResource(R.string.decks_create),
-            initialName = "",
-            onConfirm = {
-                onCreateDeck(it)
-                creating = false
-            },
-            onDismiss = { creating = false },
         )
     }
 

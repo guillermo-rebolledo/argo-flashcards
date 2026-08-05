@@ -21,6 +21,8 @@ import androidx.navigation.navArgument
 import dev.memoji.flashcards.feature.deckdetail.DeckDetailRoute
 import dev.memoji.flashcards.feature.deckdetail.DeckDetailScreen
 import dev.memoji.flashcards.feature.decks.DecksScreen
+import dev.memoji.flashcards.feature.generate.GenerateRoute
+import dev.memoji.flashcards.feature.generate.GenerateScreen
 import dev.memoji.flashcards.feature.progress.ProgressScreen
 import dev.memoji.flashcards.feature.session.SessionRoute
 import dev.memoji.flashcards.feature.session.SessionScreen
@@ -58,10 +60,29 @@ fun FlashcardsApp(navController: NavHostController = rememberNavController()) {
                     contentPadding = innerPadding,
                     onOpenDeck = { navController.navigate(DeckDetailRoute.of(it)) },
                     onStartSession = { navController.navigate(SessionRoute.of(it)) },
+                    onAddCards = { navController.navigate(GenerateRoute.PATTERN) },
                 )
             }
             composable(TopLevelDestination.PROGRESS.route) { ProgressScreen(innerPadding) }
             composable(TopLevelDestination.SETTINGS.route) { SettingsScreen(innerPadding) }
+            composable(GenerateRoute.PATTERN) {
+                GenerateScreen(
+                    contentPadding = innerPadding,
+                    // The flow ends in the Deck it made, whether it was generated or
+                    // written by hand — and it ends: popping first means Back from the Deck
+                    // goes to the Deck list, not to a Generation that is already saved.
+                    onOpenDeck = {
+                        navController.popBackStack()
+                        navController.navigate(DeckDetailRoute.of(it))
+                    },
+                    // The one failure that is not about this attempt sends them here.
+                    onOpenSettings = {
+                        navController.popBackStack()
+                        navController.navigateToTopLevel(TopLevelDestination.SETTINGS)
+                    },
+                    onClose = { navController.popBackStack() },
+                )
+            }
             composable(
                 route = DeckDetailRoute.PATTERN,
                 arguments = listOf(

@@ -162,6 +162,27 @@ internal class FakeSessionRepository(
     }
 }
 
+/**
+ * The key without the encryption, which is the part the flows above it cannot tell apart: a
+ * key is either there or it is not.
+ */
+internal class FakeApiKeyRepository(key: String? = null) : ApiKeyRepository {
+    private val stored = MutableStateFlow(key)
+
+    override fun observeHasKey(): Flow<Boolean> = stored.map { !it.isNullOrBlank() }
+
+    override suspend fun apiKey(): String? = stored.value
+
+    override suspend fun setApiKey(key: String) {
+        if (key.isBlank()) return
+        stored.value = key.trim()
+    }
+
+    override suspend fun clearApiKey() {
+        stored.value = null
+    }
+}
+
 internal class FakeSettingsRepository : SettingsRepository {
     private val settings = MutableStateFlow(UserSettings.DEFAULT)
 

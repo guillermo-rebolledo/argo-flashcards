@@ -31,12 +31,6 @@ internal class DecksViewModel @Inject constructor(
             initialValue = DecksUiState.Loading,
         )
 
-    /** A name of nothing but whitespace is not a name; the dialog also blocks it. */
-    fun createDeck(name: String) {
-        if (name.isBlank()) return
-        viewModelScope.launch { deckRepository.createDeck(name) }
-    }
-
     fun renameDeck(id: Long, name: String) {
         if (name.isBlank()) return
         viewModelScope.launch { deckRepository.renameDeck(id, name) }
