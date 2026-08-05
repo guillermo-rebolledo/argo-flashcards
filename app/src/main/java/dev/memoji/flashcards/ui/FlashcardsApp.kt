@@ -79,16 +79,20 @@ fun FlashcardsApp(navController: NavHostController = rememberNavController()) {
                 GenerateScreen(
                     contentPadding = innerPadding,
                     // The flow ends in the Deck the Cards went into, whether that Deck was
-                    // made here or already existed — and it ends: popping first means Back
-                    // from the Deck goes where the flow was entered from, not to a
-                    // Generation that is already saved.
+                    // made here or already existed — and it ends: the flow is off the stack
+                    // either way, so Back from the Deck goes where the flow was entered
+                    // from, not to a Generation that is already saved.
                     onOpenDeck = { deckId ->
-                        navController.popBackStack()
-                        navController.navigate(DeckDetailRoute.of(deckId)) {
-                            // Entered from that same Deck, this returns to the one already on
-                            // the stack rather than stacking a second copy of it. A no-op when
-                            // the Deck is not behind this flow.
-                            popUpTo(DeckDetailRoute.of(deckId)) { inclusive = true }
+                        // Entered from that same Deck, going back to it is going back: the
+                        // screen behind this one is kept as the user left it rather than
+                        // replaced by a second copy of itself.
+                        val returned = navController.popBackStack(
+                            route = DeckDetailRoute.of(deckId),
+                            inclusive = false,
+                        )
+                        if (!returned) {
+                            navController.popBackStack()
+                            navController.navigate(DeckDetailRoute.of(deckId))
                         }
                     },
                     // The one failure that is not about this attempt sends them here.

@@ -154,6 +154,9 @@ internal data class GenerateUiState(
      */
     val isNamingNewDeck: Boolean get() = target is GenerateTarget.NewDeck
 
+    /** The Cards are on their way to the Deck. Nothing about where they are going can move. */
+    val isSaving: Boolean get() = (step as? GenerateStep.Proposed)?.saving == true
+
     /**
      * Nothing ticked is nothing to save; a new Deck also has to be called something, which an
      * existing one already is.
@@ -161,7 +164,7 @@ internal data class GenerateUiState(
     val canSave: Boolean
         get() {
             val proposed = step as? GenerateStep.Proposed ?: return false
-            if (proposed.keptCount == 0 || proposed.saving) return false
+            if (proposed.keptCount == 0 || isSaving) return false
             return !isNamingNewDeck || proposed.deckName.isNotBlank()
         }
 }

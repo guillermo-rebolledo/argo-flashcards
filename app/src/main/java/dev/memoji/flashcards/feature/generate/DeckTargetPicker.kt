@@ -31,6 +31,7 @@ import dev.memoji.flashcards.R
 internal fun DeckTargetRow(
     target: GenerateTarget,
     onChange: () -> Unit,
+    enabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     ListItem(
@@ -48,7 +49,7 @@ internal fun DeckTargetRow(
             )
         },
         trailingContent = {
-            TextButton(onClick = onChange) {
+            TextButton(onClick = onChange, enabled = enabled) {
                 Text(stringResource(R.string.generate_target_change))
             }
         },

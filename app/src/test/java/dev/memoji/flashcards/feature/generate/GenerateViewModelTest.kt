@@ -6,6 +6,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import dev.memoji.flashcards.core.data.FakeCardRepository
 import dev.memoji.flashcards.core.data.FakeDeckRepository
+import dev.memoji.flashcards.core.data.deckIds
+import dev.memoji.flashcards.core.data.deckNames
 import dev.memoji.flashcards.core.generation.FakeCardGenerator
 import dev.memoji.flashcards.core.generation.GeneratedCard
 import dev.memoji.flashcards.core.generation.GenerationFailure
@@ -479,10 +481,4 @@ class GenerateViewModelTest {
         ViewModelProvider(store, factory)[viewModel::class.java]
         store.clear()
     }
-
-    private suspend fun FakeDeckRepository.deckIds() =
-        observeDeckSummaries().first().map { it.deck.id }
-
-    private suspend fun FakeDeckRepository.deckNames() =
-        observeDeckSummaries().first().map { it.deck.name }
 }

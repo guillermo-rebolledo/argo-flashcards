@@ -3,6 +3,8 @@ package dev.memoji.flashcards.feature.generate
 import androidx.lifecycle.SavedStateHandle
 import dev.memoji.flashcards.core.data.FakeCardRepository
 import dev.memoji.flashcards.core.data.FakeDeckRepository
+import dev.memoji.flashcards.core.data.deckIds
+import dev.memoji.flashcards.core.data.deckNames
 import dev.memoji.flashcards.core.generation.FakeCardGenerator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -154,6 +156,21 @@ class AddToExistingDeckTest {
         assertEquals(0, cardRepository.cardsInDeck(deckId).size)
     }
 
+    /**
+     * The Cards are already on their way to the Deck named on screen, so where they are going
+     * stops being something that can move. The screen turns this off; this is what it reads.
+     */
+    @Test
+    fun `where the Cards are going cannot move once the save is under way`() = runTest {
+        val deckId = deckRepository.createDeck("Git basics")
+        val viewModel = generatedViewModel(deckId)
+
+        viewModel.save()
+
+        assertTrue(viewModel.uiState.value.isSaving)
+        assertFalse(viewModel.uiState.value.canSave)
+    }
+
     /** Every Deck the user could aim at, so the picker has something to list. */
     @Test
     fun `the Decks that can be added to are offered`() = runTest {
@@ -215,12 +232,6 @@ class AddToExistingDeckTest {
         it.setText("Big-O notation describes how work grows with input size.")
         it.generate()
     }
-
-    private suspend fun FakeDeckRepository.deckIds() =
-        observeDeckSummaries().first().map { it.deck.id }
-
-    private suspend fun FakeDeckRepository.deckNames() =
-        observeDeckSummaries().first().map { it.deck.name }
 
     private suspend fun FakeDeckRepository.summary(id: Long) =
         observeDeckSummaries().first().single { it.deck.id == id }

@@ -135,11 +135,8 @@ internal class GenerateViewModel @Inject constructor(
      */
     fun pasteTextInstead() {
         _uiState.update { state ->
-            if (state.step !is GenerateStep.Entry) {
-                state
-            } else {
-                state.copy(step = GenerateStep.Entry())
-            }
+            if (state.step !is GenerateStep.Entry) return@update state
+            state.copy(step = GenerateStep.Entry())
         }
     }
 

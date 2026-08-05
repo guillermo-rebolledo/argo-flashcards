@@ -134,9 +134,15 @@ internal fun GenerateScreen(
         }
 
         // Where the Cards are headed, on every step that has a next one. Not shown while the
-        // Generation is in flight: nothing on that screen is for the user to act on.
+        // Generation is in flight: nothing on that screen is for the user to act on. The one
+        // control is off once the save is under way — the Cards are already on their way to
+        // the Deck named here, and changing it then would only be a lie about where they went.
         if (step !is GenerateStep.Busy) {
-            DeckTargetRow(target = uiState.target, onChange = { pickingTarget = true })
+            DeckTargetRow(
+                target = uiState.target,
+                onChange = { pickingTarget = true },
+                enabled = !uiState.isSaving,
+            )
         }
 
         when (step) {
@@ -161,11 +167,8 @@ internal fun GenerateScreen(
 
             is GenerateStep.Proposed -> {
                 ProposedCards(
+                    uiState = uiState,
                     step = step,
-                    // Only a Deck that does not exist yet is named here — an existing one is
-                    // already called something, and this flow must not rename it.
-                    showDeckName = uiState.isNamingNewDeck,
-                    canSave = uiState.canSave,
                     onSetKept = onSetKept,
                     onSetDeckName = onSetDeckName,
                     onSave = onSave,
@@ -378,9 +381,9 @@ private fun Busy(modifier: Modifier = Modifier) {
 
 @Composable
 private fun ProposedCards(
+    uiState: GenerateUiState,
+    /** The same step [uiState] holds, already narrowed by the caller's `when`. */
     step: GenerateStep.Proposed,
-    showDeckName: Boolean,
-    canSave: Boolean,
     onSetKept: (Int, Boolean) -> Unit,
     onSetDeckName: (String) -> Unit,
     onSave: () -> Unit,
@@ -388,9 +391,10 @@ private fun ProposedCards(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        // Absent when the Cards are headed for a Deck that already has a name. The row above
-        // says which Deck that is, so nothing here is left unsaid.
-        if (showDeckName) {
+        // Absent when the Cards are headed for a Deck that already has a name — that one is
+        // already called something, and this flow must not rename it. The row above says
+        // which Deck it is, so nothing here is left unsaid.
+        if (uiState.isNamingNewDeck) {
             OutlinedTextField(
                 value = step.deckName,
                 onValueChange = onSetDeckName,
@@ -428,7 +432,7 @@ private fun ProposedCards(
             ) {
                 Button(
                     onClick = onSave,
-                    enabled = canSave,
+                    enabled = uiState.canSave,
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(

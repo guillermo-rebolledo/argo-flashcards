@@ -14,6 +14,7 @@ import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /**
@@ -63,6 +64,16 @@ internal class FakeDeckRepository(
         cards.cascadeDeckDelete(id)
     }
 }
+
+/**
+ * What the Decks are, read once. Every Deck the fake holds arrives through one flow, so a test
+ * that wants to know which Decks exist asks the same question a screen would.
+ */
+internal suspend fun FakeDeckRepository.deckIds(): List<Long> =
+    observeDeckSummaries().first().map { it.deck.id }
+
+internal suspend fun FakeDeckRepository.deckNames(): List<String> =
+    observeDeckSummaries().first().map { it.deck.name }
 
 internal class FakeCardRepository(
     private val clock: MutableClock = MutableClock(),

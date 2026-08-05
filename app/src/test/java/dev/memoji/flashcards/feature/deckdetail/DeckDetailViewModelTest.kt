@@ -200,6 +200,26 @@ class DeckDetailViewModelTest {
     }
 
     /**
+     * The hand-written half of adding to a Deck that already exists: the Card is written here,
+     * beside what is already in the Deck, and starts where any new Card does.
+     */
+    @Test
+    fun `a Card written by hand joins a Deck that already has Cards in it`() = runTest {
+        val viewModel = watchedViewModel()
+        viewModel.addCard("O(1)", "Constant time.")
+        val existingId = viewModel.ids().single()
+        cardRepository.master(existingId)
+        val before = cardRepository.cardsInDeck(deckId).single()
+
+        viewModel.addCard("O(n)", "Linear time.")
+
+        val added = cardRepository.cardsInDeck(deckId).single { it.id != existingId }
+        assertEquals(0, added.masteryStreak)
+        assertEquals(null, added.lastSeenAt)
+        assertEquals(before, cardRepository.cardsInDeck(deckId).single { it.id == existingId })
+    }
+
+    /**
      * Cards added from the Add Cards flow land in the Deck this screen is watching, so the
      * summary is simply counting more of them — nothing here has to be told to refresh.
      */
