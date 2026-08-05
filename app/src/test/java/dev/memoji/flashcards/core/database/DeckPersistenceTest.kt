@@ -1,5 +1,6 @@
 package dev.memoji.flashcards.core.database
 
+import dev.memoji.flashcards.core.model.Card
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -26,7 +27,7 @@ class DeckPersistenceTest {
 
         val after = onDiskDatabase()
         try {
-            val decks = after.deckDao().observeAll().first()
+            val decks = after.deckDao().observeSummaries(Card.MASTERY_THRESHOLD).first()
 
             assertEquals(listOf("Big-O"), decks.map { it.name })
             assertEquals(listOf(kept), decks.map { it.id })

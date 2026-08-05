@@ -22,6 +22,8 @@ import dev.memoji.flashcards.feature.deckdetail.DeckDetailRoute
 import dev.memoji.flashcards.feature.deckdetail.DeckDetailScreen
 import dev.memoji.flashcards.feature.decks.DecksScreen
 import dev.memoji.flashcards.feature.progress.ProgressScreen
+import dev.memoji.flashcards.feature.session.SessionRoute
+import dev.memoji.flashcards.feature.session.SessionScreen
 import dev.memoji.flashcards.feature.settings.SettingsScreen
 import dev.memoji.flashcards.ui.navigation.TopLevelDestination
 
@@ -55,6 +57,7 @@ fun FlashcardsApp(navController: NavHostController = rememberNavController()) {
                 DecksScreen(
                     contentPadding = innerPadding,
                     onOpenDeck = { navController.navigate(DeckDetailRoute.of(it)) },
+                    onStartSession = { navController.navigate(SessionRoute.of(it)) },
                 )
             }
             composable(TopLevelDestination.PROGRESS.route) { ProgressScreen(innerPadding) }
@@ -67,9 +70,23 @@ fun FlashcardsApp(navController: NavHostController = rememberNavController()) {
             ) {
                 DeckDetailScreen(
                     contentPadding = innerPadding,
+                    onStartSession = { navController.navigate(SessionRoute.of(it)) },
                     // popBackStack rather than navigateUp: this is also how a deleted Deck
                     // leaves, and there is no up-hierarchy to walk beyond the list.
                     onBack = { navController.popBackStack() },
+                )
+            }
+            composable(
+                route = SessionRoute.PATTERN,
+                arguments = listOf(
+                    navArgument(SessionRoute.DECK_ID_ARG) { type = NavType.LongType },
+                ),
+            ) {
+                SessionScreen(
+                    contentPadding = innerPadding,
+                    // Finishing returns wherever the Session was started from — the Deck
+                    // list, or the Deck itself — rather than to a fixed screen.
+                    onFinish = { navController.popBackStack() },
                 )
             }
         }

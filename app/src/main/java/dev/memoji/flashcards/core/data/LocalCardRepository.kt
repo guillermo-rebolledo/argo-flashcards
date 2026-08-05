@@ -3,6 +3,7 @@ package dev.memoji.flashcards.core.data
 import dev.memoji.flashcards.core.database.CardDao
 import dev.memoji.flashcards.core.database.CardEntity
 import dev.memoji.flashcards.core.model.Card
+import dev.memoji.flashcards.core.model.Grade
 import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
@@ -21,6 +22,9 @@ internal class LocalCardRepository @Inject constructor(
     override fun observeCards(deckId: Long): Flow<List<Card>> =
         cardDao.observeByDeck(deckId).map { entities -> entities.map(CardEntity::asCard) }
 
+    override suspend fun cardsInDeck(deckId: Long): List<Card> =
+        cardDao.getByDeck(deckId).map(CardEntity::asCard)
+
     override suspend fun createCard(deckId: Long, front: String, back: String): Long =
         cardDao.insert(
             CardEntity(
@@ -35,6 +39,11 @@ internal class LocalCardRepository @Inject constructor(
         cardDao.updateContent(id, front.trim(), back.trim())
 
     override suspend fun deleteCard(id: Long) = cardDao.delete(id)
+
+    override suspend fun recordGrade(id: Long, grade: Grade) = when (grade) {
+        Grade.KNEW_IT -> cardDao.recordKnewIt(id, clock.millis())
+        Grade.AGAIN -> cardDao.recordAgain(id, clock.millis())
+    }
 }
 
 private fun CardEntity.asCard() = Card(

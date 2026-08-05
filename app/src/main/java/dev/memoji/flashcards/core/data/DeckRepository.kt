@@ -1,6 +1,7 @@
 package dev.memoji.flashcards.core.data
 
 import dev.memoji.flashcards.core.model.Deck
+import dev.memoji.flashcards.core.model.DeckSummary
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -9,8 +10,11 @@ import kotlinx.coroutines.flow.Flow
  */
 interface DeckRepository {
 
-    /** Every Deck, newest first, re-emitted whenever any of them changes. */
-    fun observeDecks(): Flow<List<Deck>>
+    /**
+     * Every Deck, newest first, with the counts the screens listing them show, re-emitted
+     * whenever any Deck or any Card in one changes.
+     */
+    fun observeDeckSummaries(): Flow<List<DeckSummary>>
 
     /** One Deck, or null once it is deleted. */
     fun observeDeck(id: Long): Flow<Deck?>

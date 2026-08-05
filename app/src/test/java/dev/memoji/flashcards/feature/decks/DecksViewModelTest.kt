@@ -1,6 +1,8 @@
 package dev.memoji.flashcards.feature.decks
 
+import dev.memoji.flashcards.core.data.FakeCardRepository
 import dev.memoji.flashcards.core.data.FakeDeckRepository
+import dev.memoji.flashcards.core.model.Grade
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -17,7 +19,8 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class DecksViewModelTest {
 
-    private val repository = FakeDeckRepository()
+    private val cards = FakeCardRepository()
+    private val repository = FakeDeckRepository(cards)
 
     @Before
     fun useTestDispatcher() {
@@ -89,6 +92,40 @@ class DecksViewModelTest {
         assertEquals(DecksUiState.Empty, viewModel.uiState.value)
     }
 
+    @Test
+    fun `Up next points at the Deck studied most recently`() = runTest {
+        val viewModel = watchedViewModel()
+        viewModel.createDeck("Big-O notation")
+        viewModel.createDeck("Git basics")
+        val bigO = viewModel.deckIds().last()
+        cards.createCard(bigO, "O(1)", "Constant time.")
+        cards.createCard(viewModel.deckIds().first(), "rebase", "Replays commits.")
+
+        cards.recordGrade(cards.cardsInDeck(bigO).single().id, Grade.KNEW_IT)
+
+        assertEquals("Big-O notation", viewModel.state().upNext?.deck?.name)
+    }
+
+    /** Nothing studied yet: the newest Deck is the one the user just made. */
+    @Test
+    fun `Up next falls back to the newest Deck with Cards`() = runTest {
+        val viewModel = watchedViewModel()
+        viewModel.createDeck("Big-O notation")
+        viewModel.createDeck("Git basics")
+        cards.createCard(viewModel.deckIds().last(), "O(1)", "Constant time.")
+
+        assertEquals("Big-O notation", viewModel.state().upNext?.deck?.name)
+    }
+
+    @Test
+    fun `Decks with no Cards yet have nothing to be up next`() = runTest {
+        val viewModel = watchedViewModel()
+
+        viewModel.createDeck("Big-O notation")
+
+        assertEquals(null, viewModel.state().upNext)
+    }
+
     /**
      * `uiState` only reads the repository while something is collecting it, so every test
      * needs a collector. `backgroundScope` cancels it when the test ends.
@@ -99,7 +136,8 @@ class DecksViewModelTest {
         }
     }
 
-    private fun DecksViewModel.decks() = (uiState.value as DecksUiState.Decks).decks
+    private fun DecksViewModel.state() = uiState.value as DecksUiState.Decks
+    private fun DecksViewModel.decks() = state().decks.map { it.deck }
     private fun DecksViewModel.deckNames() = decks().map { it.name }
     private fun DecksViewModel.deckIds() = decks().map { it.id }
 }

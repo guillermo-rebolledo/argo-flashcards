@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.memoji.flashcards.core.data.DeckRepository
+import dev.memoji.flashcards.core.domain.upNextDeck
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -16,9 +17,13 @@ internal class DecksViewModel @Inject constructor(
     private val deckRepository: DeckRepository,
 ) : ViewModel() {
 
-    val uiState: StateFlow<DecksUiState> = deckRepository.observeDecks()
+    val uiState: StateFlow<DecksUiState> = deckRepository.observeDeckSummaries()
         .map { decks ->
-            if (decks.isEmpty()) DecksUiState.Empty else DecksUiState.Decks(decks)
+            if (decks.isEmpty()) {
+                DecksUiState.Empty
+            } else {
+                DecksUiState.Decks(decks = decks, upNext = upNextDeck(decks))
+            }
         }
         .stateIn(
             scope = viewModelScope,

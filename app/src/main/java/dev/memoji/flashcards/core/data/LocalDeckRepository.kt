@@ -2,7 +2,10 @@ package dev.memoji.flashcards.core.data
 
 import dev.memoji.flashcards.core.database.DeckDao
 import dev.memoji.flashcards.core.database.DeckEntity
+import dev.memoji.flashcards.core.database.DeckSummaryEntity
+import dev.memoji.flashcards.core.model.Card
 import dev.memoji.flashcards.core.model.Deck
+import dev.memoji.flashcards.core.model.DeckSummary
 import java.time.Clock
 import java.time.Instant
 import javax.inject.Inject
@@ -18,8 +21,9 @@ internal class LocalDeckRepository @Inject constructor(
     private val clock: Clock,
 ) : DeckRepository {
 
-    override fun observeDecks(): Flow<List<Deck>> =
-        deckDao.observeAll().map { entities -> entities.map(DeckEntity::asDeck) }
+    override fun observeDeckSummaries(): Flow<List<DeckSummary>> =
+        deckDao.observeSummaries(Card.MASTERY_THRESHOLD)
+            .map { entities -> entities.map(DeckSummaryEntity::asDeckSummary) }
 
     override fun observeDeck(id: Long): Flow<Deck?> =
         deckDao.observeById(id).map { entity -> entity?.asDeck() }
@@ -36,4 +40,11 @@ private fun DeckEntity.asDeck() = Deck(
     id = id,
     name = name,
     createdAt = Instant.ofEpochMilli(createdAt),
+)
+
+private fun DeckSummaryEntity.asDeckSummary() = DeckSummary(
+    deck = Deck(id = id, name = name, createdAt = Instant.ofEpochMilli(createdAt)),
+    cardCount = cardCount,
+    masteredCount = masteredCount,
+    lastStudiedAt = lastStudiedAt?.let(Instant::ofEpochMilli),
 )

@@ -2,8 +2,10 @@ package dev.memoji.flashcards.feature.decks
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -12,14 +14,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,24 +36,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.memoji.flashcards.R
 import dev.memoji.flashcards.core.model.Deck
+import dev.memoji.flashcards.core.model.DeckSummary
 import dev.memoji.flashcards.ui.component.DeckNameDialog
 import dev.memoji.flashcards.ui.component.DeleteDeckDialog
 import dev.memoji.flashcards.ui.component.EmptyState
 import dev.memoji.flashcards.ui.component.FabClearance
 
 @Composable
-fun DecksScreen(contentPadding: PaddingValues, onOpenDeck: (Long) -> Unit) {
+fun DecksScreen(
+    contentPadding: PaddingValues,
+    onOpenDeck: (Long) -> Unit,
+    onStartSession: (Long) -> Unit,
+) {
     val viewModel: DecksViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     DecksScreen(
         uiState = uiState,
         onOpenDeck = onOpenDeck,
+        onStartSession = onStartSession,
         onCreateDeck = viewModel::createDeck,
         onRenameDeck = viewModel::renameDeck,
         onDeleteDeck = viewModel::deleteDeck,
@@ -58,6 +72,7 @@ fun DecksScreen(contentPadding: PaddingValues, onOpenDeck: (Long) -> Unit) {
 internal fun DecksScreen(
     uiState: DecksUiState,
     onOpenDeck: (Long) -> Unit,
+    onStartSession: (Long) -> Unit,
     onCreateDeck: (String) -> Unit,
     onRenameDeck: (Long, String) -> Unit,
     onDeleteDeck: (Long) -> Unit,
@@ -69,7 +84,7 @@ internal fun DecksScreen(
     var renamingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var deletingId by rememberSaveable { mutableStateOf<Long?>(null) }
 
-    val decks = (uiState as? DecksUiState.Decks)?.decks.orEmpty()
+    val decks = (uiState as? DecksUiState.Decks)?.decks.orEmpty().map(DeckSummary::deck)
     val bottomPadding = contentPadding.calculateBottomPadding()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -95,7 +110,9 @@ internal fun DecksScreen(
                 )
                 is DecksUiState.Decks -> DeckList(
                     decks = uiState.decks,
+                    upNext = uiState.upNext,
                     onOpen = { onOpenDeck(it.id) },
+                    onStartSession = onStartSession,
                     onRename = { renamingId = it.id },
                     onDelete = { deletingId = it.id },
                     bottomPadding = bottomPadding,
@@ -157,8 +174,10 @@ internal fun DecksScreen(
 
 @Composable
 private fun DeckList(
-    decks: List<Deck>,
+    decks: List<DeckSummary>,
+    upNext: DeckSummary?,
     onOpen: (Deck) -> Unit,
+    onStartSession: (Long) -> Unit,
     onRename: (Deck) -> Unit,
     onDelete: (Deck) -> Unit,
     bottomPadding: Dp,
@@ -170,13 +189,92 @@ private fun DeckList(
         // stays reachable rather than sitting under the button.
         contentPadding = PaddingValues(bottom = bottomPadding + FabClearance),
     ) {
-        items(items = decks, key = { it.id }) { deck ->
-            DeckRow(
-                deck = deck,
-                onOpen = { onOpen(deck) },
-                onRename = { onRename(deck) },
-                onDelete = { onDelete(deck) },
+        // Scrolls with the list rather than sitting above it: on a phone full of Decks the
+        // list is what the screen is for, and one tap to study is already at the top.
+        if (upNext != null) {
+            item(key = UP_NEXT_KEY) {
+                UpNextCard(
+                    summary = upNext,
+                    onStartSession = { onStartSession(upNext.deck.id) },
+                    onOpen = { onOpen(upNext.deck) },
+                )
+            }
+        }
+        item(key = YOUR_DECKS_KEY) {
+            Text(
+                text = stringResource(R.string.decks_your_decks),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp),
             )
+        }
+        items(items = decks, key = { it.deck.id }) { summary ->
+            DeckRow(
+                deck = summary.deck,
+                onOpen = { onOpen(summary.deck) },
+                onRename = { onRename(summary.deck) },
+                onDelete = { onDelete(summary.deck) },
+            )
+        }
+    }
+}
+
+/**
+ * One tap between deciding to study and studying. It names the Deck it will open so the user
+ * can guess what will happen before they tap, and shows how far through it they are.
+ */
+@Composable
+private fun UpNextCard(
+    summary: DeckSummary,
+    onStartSession: () -> Unit,
+    onOpen: () -> Unit,
+) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.decks_up_next),
+                style = MaterialTheme.typography.labelLarge,
+            )
+            Text(
+                text = summary.deck.name,
+                style = MaterialTheme.typography.headlineSmall,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = stringResource(
+                    R.string.decks_up_next_summary,
+                    summary.cardCount,
+                    summary.masteredCount,
+                    summary.cardCount,
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+            LinearProgressIndicator(
+                progress = { summary.masteredCount.toFloat() / summary.cardCount },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onStartSession) {
+                    Text(stringResource(R.string.session_start))
+                }
+                TextButton(onClick = onOpen) {
+                    Text(stringResource(R.string.decks_see_cards))
+                }
+            }
         }
     }
 }
@@ -238,3 +336,7 @@ private fun EmptyDecks(
         modifier = modifier,
     )
 }
+
+/** Stable keys for the two rows that are not Decks, so neither is confused for one. */
+private const val UP_NEXT_KEY = "up-next"
+private const val YOUR_DECKS_KEY = "your-decks"

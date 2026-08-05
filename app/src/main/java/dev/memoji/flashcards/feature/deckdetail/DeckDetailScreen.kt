@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -24,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,11 +51,16 @@ import dev.memoji.flashcards.ui.component.EmptyState
 import dev.memoji.flashcards.ui.component.FabClearance
 
 @Composable
-fun DeckDetailScreen(contentPadding: PaddingValues, onBack: () -> Unit) {
+fun DeckDetailScreen(
+    contentPadding: PaddingValues,
+    onStartSession: (Long) -> Unit,
+    onBack: () -> Unit,
+) {
     val viewModel: DeckDetailViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     DeckDetailScreen(
         uiState = uiState,
+        onStartSession = onStartSession,
         onBack = onBack,
         onSetFilter = viewModel::setFilter,
         onAddCard = viewModel::addCard,
@@ -67,6 +75,7 @@ fun DeckDetailScreen(contentPadding: PaddingValues, onBack: () -> Unit) {
 @Composable
 internal fun DeckDetailScreen(
     uiState: DeckDetailUiState,
+    onStartSession: (Long) -> Unit,
     onBack: () -> Unit,
     onSetFilter: (CardFilter) -> Unit,
     onAddCard: (front: String, back: String) -> Unit,
@@ -123,17 +132,25 @@ internal fun DeckDetailScreen(
                             ready.filter.emptyBodyRes,
                             Card.MASTERY_THRESHOLD,
                         ),
-                        bottomPadding = bottomPadding,
+                        // The start-Session bar below carries the navigation bar's room here.
+                        bottomPadding = 0.dp,
                         modifier = Modifier.weight(1f),
                     )
                     else -> CardList(
                         cards = ready.cards,
                         onEdit = { editingId = it.id },
                         onDelete = { deletingId = it.id },
-                        bottomPadding = bottomPadding,
                         modifier = Modifier.weight(1f),
                     )
                 }
+            }
+            // A Deck with no Cards has no Session in it, so the button is not offered until
+            // there is something to review.
+            if (ready != null && !ready.isDeckEmpty) {
+                StartSessionBar(
+                    onStartSession = { onStartSession(ready.deck.id) },
+                    bottomPadding = bottomPadding,
+                )
             }
         }
 
@@ -147,7 +164,10 @@ internal fun DeckDetailScreen(
                 text = { Text(stringResource(R.string.cards_add_card)) },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(bottom = bottomPadding)
+                    .padding(
+                        bottom = bottomPadding +
+                            if (ready?.isDeckEmpty == false) StartSessionBarHeight else 0.dp,
+                    )
                     .padding(16.dp),
             )
         }
@@ -312,19 +332,38 @@ private fun CardFilterChips(selected: CardFilter, onSelect: (CardFilter) -> Unit
     }
 }
 
+/**
+ * Where a Session is started from. Pinned rather than scrolled to, because deciding to study
+ * and studying should have nothing between them — including a list to scroll to the end of.
+ */
+@Composable
+private fun StartSessionBar(onStartSession: () -> Unit, bottomPadding: Dp) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
+        Button(
+            onClick = onStartSession,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = bottomPadding)
+                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp)
+                .height(StartSessionButtonHeight),
+        ) {
+            Text(stringResource(R.string.session_start))
+        }
+    }
+}
+
 @Composable
 private fun CardList(
     cards: List<Card>,
     onEdit: (Card) -> Unit,
     onDelete: (Card) -> Unit,
-    bottomPadding: Dp,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         // Clears the extended FAB, so the last Card in the list stays reachable rather than
-        // sitting under the button.
-        contentPadding = PaddingValues(bottom = bottomPadding + FabClearance),
+        // sitting under the button. The bar below the list carries its own room.
+        contentPadding = PaddingValues(bottom = FabClearance),
     ) {
         items(items = cards, key = { it.id }) { card ->
             CardRow(
@@ -406,3 +445,9 @@ private fun EmptyDeck(bottomPadding: Dp, modifier: Modifier = Modifier) {
         modifier = modifier,
     )
 }
+
+/** The height the design gives the start-Session button. */
+private val StartSessionButtonHeight = 56.dp
+
+/** What the bar around it occupies, so the FAB above can clear it. */
+private val StartSessionBarHeight = StartSessionButtonHeight + 28.dp
