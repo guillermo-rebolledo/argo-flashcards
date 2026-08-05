@@ -38,6 +38,7 @@ fun SettingsScreen(contentPadding: PaddingValues) {
         onSetSessionLength = viewModel::setSessionLength,
         onSetDarkTheme = viewModel::setDarkTheme,
         onSetReducedMotion = viewModel::setReducedMotion,
+        onSetHideDayStreak = viewModel::setHideDayStreak,
         contentPadding = contentPadding,
     )
 }
@@ -48,6 +49,7 @@ internal fun SettingsScreen(
     onSetSessionLength: (SessionLength) -> Unit,
     onSetDarkTheme: (Boolean) -> Unit,
     onSetReducedMotion: (Boolean) -> Unit,
+    onSetHideDayStreak: (Boolean) -> Unit,
     contentPadding: PaddingValues,
 ) {
     Column(
@@ -64,6 +66,14 @@ internal fun SettingsScreen(
 
         SectionHeader(stringResource(R.string.settings_focus))
         ReducedMotionRow(override = uiState.reducedMotion, onSet = onSetReducedMotion)
+        // Under Focus rather than under Appearance: a counter someone finds stressful is not a
+        // decoration they dislike, it is a thing in the way of them studying.
+        SettingRow(
+            title = stringResource(R.string.settings_hide_streak),
+            body = stringResource(R.string.settings_hide_streak_body),
+            checked = uiState.hideDayStreak,
+            onCheckedChange = onSetHideDayStreak,
+        )
         SessionLengthChips(selected = uiState.sessionLength, onSelect = onSetSessionLength)
 
         SectionHeader(stringResource(R.string.settings_appearance))

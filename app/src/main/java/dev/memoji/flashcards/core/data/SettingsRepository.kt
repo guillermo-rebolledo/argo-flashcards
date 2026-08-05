@@ -24,4 +24,6 @@ interface SettingsRepository {
     suspend fun setTheme(theme: ThemePreference)
 
     suspend fun setReducedMotion(reducedMotion: Boolean)
+
+    suspend fun setHideDayStreak(hideDayStreak: Boolean)
 }

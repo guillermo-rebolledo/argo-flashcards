@@ -18,6 +18,12 @@ data class UserSettings(
      * having animations off wins whatever this says. Off means "no opinion", not "animate".
      */
     val reducedMotion: Boolean = false,
+    /**
+     * Takes the day streak and the seven-day grid off the Progress screen. For the user who
+     * finds a counter something to lose rather than something to keep — the app is not allowed
+     * to become another thing keeping score.
+     */
+    val hideDayStreak: Boolean = false,
 ) {
     companion object {
         val DEFAULT = UserSettings()

@@ -20,5 +20,9 @@ internal abstract class DataModule {
 
     @Binds
     @Singleton
+    abstract fun bindSessionRepository(repository: LocalSessionRepository): SessionRepository
+
+    @Binds
+    @Singleton
     abstract fun bindSettingsRepository(repository: LocalSettingsRepository): SettingsRepository
 }

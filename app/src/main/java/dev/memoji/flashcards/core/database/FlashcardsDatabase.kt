@@ -10,7 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  * migration — there is no cache to fall back on, so destructive migration is never an option.
  */
 @Database(
-    entities = [DeckEntity::class, CardEntity::class],
+    entities = [DeckEntity::class, CardEntity::class, SessionEntity::class],
     version = FlashcardsDatabase.DATABASE_VERSION,
     exportSchema = true,
 )
@@ -20,8 +20,10 @@ abstract class FlashcardsDatabase : RoomDatabase() {
 
     abstract fun cardDao(): CardDao
 
+    abstract fun sessionDao(): SessionDao
+
     companion object {
-        const val DATABASE_VERSION = 2
+        const val DATABASE_VERSION = 3
         const val DATABASE_NAME = "flashcards.db"
 
         /**
@@ -50,7 +52,33 @@ abstract class FlashcardsDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Adds the Session log. Nothing existing is touched: an install upgrading to this
+         * version has no history to reconstruct, and Progress starts from the next Session.
+         */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `sessions` (
+                        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `deck_id` INTEGER,
+                        `started_at` INTEGER NOT NULL,
+                        `ended_at` INTEGER NOT NULL,
+                        `cards_reviewed` INTEGER NOT NULL,
+                        `knew_it` INTEGER NOT NULL,
+                        FOREIGN KEY(`deck_id`) REFERENCES `decks`(`id`)
+                            ON UPDATE NO ACTION ON DELETE SET NULL
+                    )
+                    """.trimIndent(),
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_sessions_deck_id` ON `sessions` (`deck_id`)",
+                )
+            }
+        }
+
         /** Every migration the app ships, in one place so no builder can forget one. */
-        val MIGRATIONS = arrayOf(MIGRATION_1_2)
+        val MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
     }
 }

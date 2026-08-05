@@ -81,7 +81,27 @@
     <string name="decks_see_cards">See cards</string>
     <string name="decks_your_decks">Your Decks</string>
 
-    <string name="placeholder_progress">Your streak and how much of each Deck you have Mastered will show up here.</string>
+    <!-- A streak of one day is a streak: "1 day in a row" is what the first Session earns. -->
+    <plurals name="progress_streak_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="progress_streak_caption">in a row</string>
+    <!-- The dots are a picture of the week; the day each one stands for is said out loud only
+         to a screen reader, which cannot see the row. -->
+    <string name="progress_day_studied">%1$s, studied</string>
+    <string name="progress_day_not_studied">%1$s, not studied</string>
+    <string name="progress_last_seven_days">Last seven days</string>
+    <string name="progress_tile_cards">cards</string>
+    <string name="progress_tile_minutes">minutes</string>
+    <string name="progress_tile_decks">decks</string>
+    <!-- Names the day and stops. The line under it is the point of the whole screen: a gap is
+         something the streak holds for you, never something you are told off for. -->
+    <string name="progress_skipped_title">You skipped %1$s</string>
+    <string name="progress_skipped_body">The streak holds your place. Pick it back up whenever you have two minutes.</string>
+    <string name="progress_decks_this_week">Decks touched this week</string>
+    <string name="progress_empty_title">Nothing here yet</string>
+    <string name="progress_empty_body">Finish a Session and your week shows up here — the days you studied, and the Decks you spent them on.</string>
 
     <string name="settings_focus">Focus</string>
     <string name="settings_reduced_motion">Reduced motion</string>
@@ -89,6 +109,8 @@
     <!-- Replaces the line above when the device is already asking for reduced motion, so the
          toggle sitting off next to still Cards reads as explained rather than as broken. -->
     <string name="settings_reduced_motion_system">Already on in your device\'s accessibility settings</string>
+    <string name="settings_hide_streak">Hide streak counter</string>
+    <string name="settings_hide_streak_body">Keep progress out of sight until you ask for it</string>
     <string name="settings_session_length">Session length</string>
     <!-- Why there are three chips and not a number field: the end has to stay in sight. -->
     <string name="settings_session_length_body">Every Session ends where you can see it.</string>

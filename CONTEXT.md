@@ -70,3 +70,16 @@ _Avoid_: New, unlearned, in progress, weak
 **Miss**:
 A Card graded `Again` during a Session. Listed on the results screen as worth another look.
 _Avoid_: Failure, wrong answer, lapse
+
+### Progress
+
+**Session log**:
+One row per Session, written when the sitting ends. Every figure on the Progress screen is
+counted from it, and nothing else counts anything.
+_Avoid_: History, stats, activity
+
+**Day streak**:
+The number of consecutive days with at least one Session. A gap ends it, but the copy always
+says the streak is held rather than lost, and the user can hide it entirely.
+_Avoid_: Streak on its own — that is the Mastery streak. Also: chain, run
+

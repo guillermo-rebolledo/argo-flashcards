@@ -4,6 +4,7 @@ import dev.memoji.flashcards.core.model.Card
 import dev.memoji.flashcards.core.model.Deck
 import dev.memoji.flashcards.core.model.DeckSummary
 import dev.memoji.flashcards.core.model.Grade
+import dev.memoji.flashcards.core.model.Session
 import dev.memoji.flashcards.core.model.SessionLength
 import dev.memoji.flashcards.core.model.ThemePreference
 import dev.memoji.flashcards.core.model.UserSettings
@@ -130,6 +131,37 @@ internal class FakeCardRepository(
     }
 }
 
+/**
+ * Keeps the rows in the order the real table hands them back, and stamps the end of a Session
+ * off the same clock the real repository reads.
+ */
+internal class FakeSessionRepository(
+    private val clock: MutableClock = MutableClock(),
+) : SessionRepository {
+    private val sessions = MutableStateFlow(emptyList<Session>())
+    private var nextId = 1L
+
+    override fun observeSessions(): Flow<List<Session>> = sessions
+
+    override suspend fun recordSession(
+        deckId: Long,
+        startedAt: Instant,
+        cardsReviewed: Int,
+        knewIt: Int,
+    ) {
+        sessions.value = (
+            sessions.value + Session(
+                id = nextId++,
+                deckId = deckId,
+                started = startedAt,
+                ended = clock.instant(),
+                cardsReviewed = cardsReviewed,
+                knewIt = knewIt,
+            )
+            ).sortedBy(Session::started)
+    }
+}
+
 internal class FakeSettingsRepository : SettingsRepository {
     private val settings = MutableStateFlow(UserSettings.DEFAULT)
 
@@ -145,5 +177,9 @@ internal class FakeSettingsRepository : SettingsRepository {
 
     override suspend fun setReducedMotion(reducedMotion: Boolean) {
         settings.value = settings.value.copy(reducedMotion = reducedMotion)
+    }
+
+    override suspend fun setHideDayStreak(hideDayStreak: Boolean) {
+        settings.value = settings.value.copy(hideDayStreak = hideDayStreak)
     }
 }

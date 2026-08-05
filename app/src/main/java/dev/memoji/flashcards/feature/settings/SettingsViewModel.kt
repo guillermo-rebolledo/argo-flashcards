@@ -49,6 +49,10 @@ internal class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setReducedMotion(reducedMotion) }
     }
 
+    fun setHideDayStreak(hideDayStreak: Boolean) {
+        viewModelScope.launch { settingsRepository.setHideDayStreak(hideDayStreak) }
+    }
+
     private companion object {
         /** Long enough to ride out a rotation without re-reading the preferences. */
         const val STOP_TIMEOUT_MILLIS = 5_000L

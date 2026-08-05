@@ -79,6 +79,17 @@ class LocalSettingsRepositoryTest {
         }
     }
 
+    @Test
+    fun `the hide-day-streak setting round-trips both ways`() = runTest {
+        withSettings { settings ->
+            settings.setHideDayStreak(true)
+            assertTrue(settings.observeSettings().first().hideDayStreak)
+
+            settings.setHideDayStreak(false)
+            assertFalse(settings.observeSettings().first().hideDayStreak)
+        }
+    }
+
     /** Writing one setting must not quietly reset the ones the user set earlier. */
     @Test
     fun `settings written one at a time all survive together`() = runTest {
@@ -86,12 +97,14 @@ class LocalSettingsRepositoryTest {
             settings.setSessionLength(SessionLength.LONG)
             settings.setTheme(ThemePreference.LIGHT)
             settings.setReducedMotion(true)
+            settings.setHideDayStreak(true)
 
             assertEquals(
                 UserSettings(
                     sessionLength = SessionLength.LONG,
                     theme = ThemePreference.LIGHT,
                     reducedMotion = true,
+                    hideDayStreak = true,
                 ),
                 settings.observeSettings().first(),
             )
@@ -104,6 +117,7 @@ class LocalSettingsRepositoryTest {
             settings.setSessionLength(SessionLength.SHORT)
             settings.setTheme(ThemePreference.DARK)
             settings.setReducedMotion(true)
+            settings.setHideDayStreak(true)
         }
 
         withSettings { settings ->
@@ -112,6 +126,7 @@ class LocalSettingsRepositoryTest {
                     sessionLength = SessionLength.SHORT,
                     theme = ThemePreference.DARK,
                     reducedMotion = true,
+                    hideDayStreak = true,
                 ),
                 settings.observeSettings().first(),
             )
