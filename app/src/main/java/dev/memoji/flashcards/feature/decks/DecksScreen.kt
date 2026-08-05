@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -29,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,10 +38,8 @@ import dev.memoji.flashcards.R
 import dev.memoji.flashcards.core.model.Deck
 
 @Composable
-fun DecksScreen(
-    contentPadding: PaddingValues,
-    viewModel: DecksViewModel = hiltViewModel(),
-) {
+fun DecksScreen(contentPadding: PaddingValues) {
+    val viewModel: DecksViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     DecksScreen(
         uiState = uiState,
@@ -57,7 +57,6 @@ internal fun DecksScreen(
     onRenameDeck: (Long, String) -> Unit,
     onDeleteDeck: (Long) -> Unit,
     contentPadding: PaddingValues,
-    modifier: Modifier = Modifier,
 ) {
     // Held by id rather than by Deck, so a dialog left open across a rotation reopens against
     // whatever that Deck says now, and closes by itself if the Deck is gone.
@@ -66,32 +65,50 @@ internal fun DecksScreen(
     var deletingId by rememberSaveable { mutableStateOf<Long?>(null) }
 
     val decks = (uiState as? DecksUiState.Decks)?.decks.orEmpty()
+    val bottomPadding = contentPadding.calculateBottomPadding()
 
-    Box(modifier = modifier.fillMaxSize()) {
-        when (uiState) {
-            // Nothing yet: the first read is a local database query, and a spinner that
-            // appears for one frame is worse than a screen that stays still for one.
-            DecksUiState.Loading -> Unit
-            DecksUiState.Empty -> EmptyDecks(contentPadding)
-            is DecksUiState.Decks -> DeckList(
-                decks = uiState.decks,
-                onRename = { renamingId = it.id },
-                onDelete = { deletingId = it.id },
-                contentPadding = contentPadding,
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = contentPadding.calculateTopPadding()),
+        ) {
+            // Outside the list, as in the design, so the screen keeps its name while the
+            // Decks scroll under it — and still has one when there are no Decks to scroll.
+            Text(
+                text = stringResource(R.string.destination_decks),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
             )
+            when (uiState) {
+                // The first read is a local database query. A spinner that appears for one
+                // frame is worse than a screen that fills in on the next one.
+                DecksUiState.Loading -> Unit
+                DecksUiState.Empty -> EmptyDecks(
+                    bottomPadding = bottomPadding,
+                    modifier = Modifier.weight(1f),
+                )
+                is DecksUiState.Decks -> DeckList(
+                    decks = uiState.decks,
+                    onRename = { renamingId = it.id },
+                    onDelete = { deletingId = it.id },
+                    bottomPadding = bottomPadding,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
 
-        if (uiState != DecksUiState.Loading) {
-            ExtendedFloatingActionButton(
-                onClick = { creating = true },
-                icon = { Icon(Icons.Filled.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.decks_new_deck)) },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(contentPadding)
-                    .padding(16.dp),
-            )
-        }
+        // Shown while loading too: the empty screen this lands on is the one the user has to
+        // be able to act from, and it must not arrive a frame after the screen does.
+        ExtendedFloatingActionButton(
+            onClick = { creating = true },
+            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+            text = { Text(stringResource(R.string.decks_new_deck)) },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = bottomPadding)
+                .padding(16.dp),
+        )
     }
 
     if (creating) {
@@ -137,23 +154,15 @@ private fun DeckList(
     decks: List<Deck>,
     onRename: (Deck) -> Unit,
     onDelete: (Deck) -> Unit,
-    contentPadding: PaddingValues,
+    bottomPadding: Dp,
+    modifier: Modifier = Modifier,
 ) {
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(
-            top = contentPadding.calculateTopPadding(),
-            // Clears the bars and then the extended FAB, so the last Deck stays reachable.
-            bottom = contentPadding.calculateBottomPadding() + FabClearance,
-        ),
+        modifier = modifier.fillMaxWidth(),
+        // Clears the navigation bar and then the extended FAB, so the last Deck in the list
+        // stays reachable rather than sitting under the button.
+        contentPadding = PaddingValues(bottom = bottomPadding + FabClearance),
     ) {
-        item {
-            Text(
-                text = stringResource(R.string.destination_decks),
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-            )
-        }
         items(items = decks, key = { it.id }) { deck ->
             DeckRow(
                 deck = deck,
@@ -200,22 +209,25 @@ private fun DeckRow(deck: Deck, onRename: () -> Unit, onDelete: () -> Unit) {
 }
 
 /**
- * The design defines no empty state. On first launch the list would otherwise be a blank screen
- * with a button in the corner, so this says what a Deck is and points at that button.
+ * The design defines no empty state. On first launch the list would otherwise be a blank
+ * screen with a button in the corner, so this says what the screen is for and names the button.
  */
 @Composable
-private fun EmptyDecks(contentPadding: PaddingValues) {
+private fun EmptyDecks(
+    bottomPadding: Dp,
+    modifier: Modifier = Modifier,
+) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding)
-            .padding(horizontal = 32.dp, vertical = 24.dp),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = bottomPadding + FabClearance)
+            .padding(horizontal = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = stringResource(R.string.decks_empty_title),
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center,
         )
         Text(

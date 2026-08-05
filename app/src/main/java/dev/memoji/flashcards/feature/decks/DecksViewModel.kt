@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class DecksViewModel @Inject constructor(
+internal class DecksViewModel @Inject constructor(
     private val deckRepository: DeckRepository,
 ) : ViewModel() {
 

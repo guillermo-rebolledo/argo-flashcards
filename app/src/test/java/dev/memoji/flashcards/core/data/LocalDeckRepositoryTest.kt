@@ -1,8 +1,7 @@
 package dev.memoji.flashcards.core.data
 
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import dev.memoji.flashcards.core.database.FlashcardsDatabase
+import dev.memoji.flashcards.core.database.inMemoryDatabase
 import dev.memoji.flashcards.core.model.Deck
 import java.time.Clock
 import java.time.Instant
@@ -29,10 +28,7 @@ class LocalDeckRepositoryTest {
 
     @Before
     fun openDatabase() {
-        database = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            FlashcardsDatabase::class.java,
-        ).build()
+        database = inMemoryDatabase()
         clock = MutableClock(Instant.parse("2026-08-04T09:00:00Z"))
         repository = LocalDeckRepository(database.deckDao(), clock)
     }

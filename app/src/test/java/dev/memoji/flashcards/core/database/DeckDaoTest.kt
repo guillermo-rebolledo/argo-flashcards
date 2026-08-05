@@ -1,7 +1,5 @@
 package dev.memoji.flashcards.core.database
 
-import androidx.room.Room
-import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -24,10 +22,7 @@ class DeckDaoTest {
 
     @Before
     fun openDatabase() {
-        database = Room.inMemoryDatabaseBuilder(
-            ApplicationProvider.getApplicationContext(),
-            FlashcardsDatabase::class.java,
-        ).build()
+        database = inMemoryDatabase()
         dao = database.deckDao()
     }
 
