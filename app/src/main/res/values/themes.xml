@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Compose owns the app's colour. This theme only covers the window before the first frame,
+      so it carries a matching background and nothing else. values-night supplies the dark
+      parent; DayNight itself is API 29 and this app runs from 26.
+    -->
+    <style name="Theme.Flashcards" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- TealLightColorScheme.surface — matches the first Compose frame. -->
+    <color name="window_background">#F4FBF8</color>
+
+    <!-- Launcher icon background — TealLightColorScheme.primaryContainer. -->
+    <color name="ic_launcher_background">#9EF2E4</color>
+</resources>
