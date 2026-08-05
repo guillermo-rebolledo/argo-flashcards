@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Flashcards</string>
+
+    <string name="destination_decks">Decks</string>
+    <string name="destination_progress">Progress</string>
+    <string name="destination_settings">Settings</string>
+
+    <string name="placeholder_decks">Your Decks will live here.</string>
+    <string name="placeholder_progress">Your day streak and mastery will show up here once you have studied.</string>
+    <string name="placeholder_settings">Your API key, Session length, reminders and theme will be set here.</string>
+</resources>

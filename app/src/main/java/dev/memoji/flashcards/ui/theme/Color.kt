@@ -1,0 +1,118 @@
+package dev.memoji.flashcards.ui.theme
+
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
+
+/**
+ * The teal scheme the design is built on. Used below Android 12, where there is no wallpaper
+ * colour to derive from.
+ *
+ * Every role below is generated from the seed `#006A60` — the primary in
+ * `docs/adhd-friendly-flashcard-app/project/android-frame.jsx` — through Material's
+ * tonal-spot algorithm at default contrast. Regenerate rather than hand-edit: changing one
+ * role in isolation is how a scheme loses its contrast guarantees.
+ */
+val TealSeed = Color(0xFF006A60)
+
+val TealLightColorScheme = lightColorScheme(
+    primary = Color(0xFF006A60),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFF9EF2E4),
+    onPrimaryContainer = Color(0xFF005048),
+    inversePrimary = Color(0xFF82D5C8),
+    secondary = Color(0xFF4A635F),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFCCE8E2),
+    onSecondaryContainer = Color(0xFF334B47),
+    tertiary = Color(0xFF466179),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFCCE5FF),
+    onTertiaryContainer = Color(0xFF2D4961),
+    background = Color(0xFFF4FBF8),
+    onBackground = Color(0xFF161D1C),
+    surface = Color(0xFFF4FBF8),
+    onSurface = Color(0xFF161D1C),
+    surfaceVariant = Color(0xFFDAE5E2),
+    onSurfaceVariant = Color(0xFF3F4947),
+    surfaceTint = Color(0xFF006A60),
+    inverseSurface = Color(0xFF2B3230),
+    inverseOnSurface = Color(0xFFECF2EF),
+    error = Color(0xFFBA1A1A),
+    onError = Color(0xFFFFFFFF),
+    errorContainer = Color(0xFFFFDAD6),
+    onErrorContainer = Color(0xFF93000A),
+    outline = Color(0xFF6F7977),
+    outlineVariant = Color(0xFFBEC9C6),
+    scrim = Color(0xFF000000),
+    surfaceBright = Color(0xFFF4FBF8),
+    surfaceDim = Color(0xFFD5DBD9),
+    surfaceContainer = Color(0xFFE9EFED),
+    surfaceContainerHigh = Color(0xFFE3EAE7),
+    surfaceContainerHighest = Color(0xFFDDE4E1),
+    surfaceContainerLow = Color(0xFFEFF5F2),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    primaryFixed = Color(0xFF9EF2E4),
+    primaryFixedDim = Color(0xFF82D5C8),
+    onPrimaryFixed = Color(0xFF00201C),
+    onPrimaryFixedVariant = Color(0xFF005048),
+    secondaryFixed = Color(0xFFCCE8E2),
+    secondaryFixedDim = Color(0xFFB1CCC6),
+    onSecondaryFixed = Color(0xFF05201C),
+    onSecondaryFixedVariant = Color(0xFF334B47),
+    tertiaryFixed = Color(0xFFCCE5FF),
+    tertiaryFixedDim = Color(0xFFADCAE6),
+    onTertiaryFixed = Color(0xFF001D31),
+    onTertiaryFixedVariant = Color(0xFF2D4961),
+)
+
+val TealDarkColorScheme = darkColorScheme(
+    primary = Color(0xFF82D5C8),
+    onPrimary = Color(0xFF003732),
+    primaryContainer = Color(0xFF005048),
+    onPrimaryContainer = Color(0xFF9EF2E4),
+    inversePrimary = Color(0xFF006A60),
+    secondary = Color(0xFFB1CCC6),
+    onSecondary = Color(0xFF1C3531),
+    secondaryContainer = Color(0xFF334B47),
+    onSecondaryContainer = Color(0xFFCCE8E2),
+    tertiary = Color(0xFFADCAE6),
+    onTertiary = Color(0xFF153349),
+    tertiaryContainer = Color(0xFF2D4961),
+    onTertiaryContainer = Color(0xFFCCE5FF),
+    background = Color(0xFF0E1513),
+    onBackground = Color(0xFFDDE4E1),
+    surface = Color(0xFF0E1513),
+    onSurface = Color(0xFFDDE4E1),
+    surfaceVariant = Color(0xFF3F4947),
+    onSurfaceVariant = Color(0xFFBEC9C6),
+    surfaceTint = Color(0xFF82D5C8),
+    inverseSurface = Color(0xFFDDE4E1),
+    inverseOnSurface = Color(0xFF2B3230),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF690005),
+    errorContainer = Color(0xFF93000A),
+    onErrorContainer = Color(0xFFFFDAD6),
+    outline = Color(0xFF899390),
+    outlineVariant = Color(0xFF3F4947),
+    scrim = Color(0xFF000000),
+    surfaceBright = Color(0xFF343A39),
+    surfaceDim = Color(0xFF0E1513),
+    surfaceContainer = Color(0xFF1A2120),
+    surfaceContainerHigh = Color(0xFF252B2A),
+    surfaceContainerHighest = Color(0xFF303635),
+    surfaceContainerLow = Color(0xFF161D1C),
+    surfaceContainerLowest = Color(0xFF090F0E),
+    primaryFixed = Color(0xFF9EF2E4),
+    primaryFixedDim = Color(0xFF82D5C8),
+    onPrimaryFixed = Color(0xFF00201C),
+    onPrimaryFixedVariant = Color(0xFF005048),
+    secondaryFixed = Color(0xFFCCE8E2),
+    secondaryFixedDim = Color(0xFFB1CCC6),
+    onSecondaryFixed = Color(0xFF05201C),
+    onSecondaryFixedVariant = Color(0xFF334B47),
+    tertiaryFixed = Color(0xFFCCE5FF),
+    tertiaryFixedDim = Color(0xFFADCAE6),
+    onTertiaryFixed = Color(0xFF001D31),
+    onTertiaryFixedVariant = Color(0xFF2D4961),
+)
