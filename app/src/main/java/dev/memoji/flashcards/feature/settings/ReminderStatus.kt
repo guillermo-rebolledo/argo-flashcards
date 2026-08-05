@@ -32,3 +32,30 @@ internal fun reminderStatus(
     notificationsAllowed -> ReminderStatus.ON
     else -> ReminderStatus.BLOCKED
 }
+
+/** What flipping the switch is asking for. */
+internal enum class ReminderSwitchAction { TURN_ON, TURN_OFF, ASK_FOR_PERMISSION }
+
+/**
+ * The switch reports the position it moved to, which says nothing the [status] does not
+ * already say — so the decision is made from the status alone.
+ *
+ * [BLOCKED][ReminderStatus.BLOCKED] is the case worth naming. Its switch is drawn off while
+ * the setting underneath is on, so the only move available on it reads as "turn on" and would
+ * loop straight back into a permission Android has already refused. It turns the setting off
+ * instead: a user who has given up on reminders must have a way to plainly off, and the row
+ * itself is what offers the retry, by opening the one screen that can undo the block.
+ */
+internal fun reminderSwitchAction(
+    status: ReminderStatus,
+    /** Whether this version of Android has a notification permission to ask for at all. */
+    permissionNeeded: Boolean,
+): ReminderSwitchAction = when (status) {
+    ReminderStatus.ON, ReminderStatus.BLOCKED -> ReminderSwitchAction.TURN_OFF
+    ReminderStatus.OFF ->
+        if (permissionNeeded) {
+            ReminderSwitchAction.ASK_FOR_PERMISSION
+        } else {
+            ReminderSwitchAction.TURN_ON
+        }
+}

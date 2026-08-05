@@ -45,4 +45,42 @@ class ReminderStatusTest {
             reminderStatus(remindersEnabled = false, notificationsAllowed = false),
         )
     }
+
+    @Test
+    fun `flipping an off switch asks for the permission where there is one to ask for`() {
+        assertEquals(
+            ReminderSwitchAction.ASK_FOR_PERMISSION,
+            reminderSwitchAction(ReminderStatus.OFF, permissionNeeded = true),
+        )
+    }
+
+    /** Before Android 13 there is nothing to ask for, so the switch simply turns it on. */
+    @Test
+    fun `flipping an off switch turns reminders on where no permission exists`() {
+        assertEquals(
+            ReminderSwitchAction.TURN_ON,
+            reminderSwitchAction(ReminderStatus.OFF, permissionNeeded = false),
+        )
+    }
+
+    @Test
+    fun `flipping an on switch turns reminders off`() {
+        assertEquals(
+            ReminderSwitchAction.TURN_OFF,
+            reminderSwitchAction(ReminderStatus.ON, permissionNeeded = true),
+        )
+    }
+
+    /**
+     * Off has to be reachable from blocked. The switch is drawn off there while the setting
+     * is on, so without this the only move available would ask again for a permission Android
+     * has already refused, and the user could never get back to plainly off.
+     */
+    @Test
+    fun `flipping a blocked switch turns reminders off rather than asking again`() {
+        assertEquals(
+            ReminderSwitchAction.TURN_OFF,
+            reminderSwitchAction(ReminderStatus.BLOCKED, permissionNeeded = true),
+        )
+    }
 }

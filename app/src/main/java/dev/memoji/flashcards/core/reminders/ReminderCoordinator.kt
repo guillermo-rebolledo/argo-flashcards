@@ -33,15 +33,19 @@ internal class ReminderCoordinator @Inject constructor(
     fun start() {
         scope.launch {
             settingsRepository.observeSettings()
-                .map { Reminder(enabled = it.remindersEnabled, time = it.reminderTime) }
+                .map { ReminderSetting(enabled = it.remindersEnabled, time = it.reminderTime) }
                 // Every other setting comes down the same flow; only these two mean anything
                 // here, and rescheduling on a theme change would move the reminder for free.
                 .distinctUntilChanged()
-                .collect { reminder ->
-                    if (reminder.enabled) scheduler.schedule(reminder.time) else scheduler.cancel()
+                .collect { setting ->
+                    if (setting.enabled) scheduler.schedule(setting.time) else scheduler.cancel()
                 }
         }
     }
 
-    private data class Reminder(val enabled: Boolean, val time: ReminderTime)
+    /**
+     * The two settings that decide whether there is a Reminder, which is not itself a
+     * Reminder — that word is the notification, and this is the pair of answers behind it.
+     */
+    private data class ReminderSetting(val enabled: Boolean, val time: ReminderTime)
 }

@@ -34,7 +34,18 @@ internal class AndroidReminderNotifier @Inject constructor(
         }
     }
 
-    override fun notificationsAllowed(): Boolean = notificationManager.areNotificationsEnabled()
+    /**
+     * Two ways to be silenced, and both have to be asked about. `areNotificationsEnabled`
+     * covers the app — the permission refused, or notifications turned off wholesale — but a
+     * user can leave those alone and mute this one channel, and an app that only asked the
+     * first question would show a switch reading on while every reminder went nowhere.
+     */
+    override fun notificationsAllowed(): Boolean = notificationManager.areNotificationsEnabled() &&
+        notificationManager.getNotificationChannel(CHANNEL_ID)
+            ?.let { it.importance != NotificationManager.IMPORTANCE_NONE }
+        // No channel yet means no reminder has ever been posted, which is not the user having
+        // silenced anything. It is created on the first post.
+        ?: true
 
     /**
      * Created at post time rather than at startup, so an install that never turns reminders on
@@ -73,8 +84,15 @@ internal class AndroidReminderNotifier @Inject constructor(
     private fun openTheApp(): PendingIntent = PendingIntent.getActivity(
         context,
         /* requestCode = */ 0,
+        // SINGLE_TOP alongside CLEAR_TOP is what makes this reuse the activity rather than
+        // tear it down and build a new one — CLEAR_TOP on its own recreates a standard-launch
+        // activity, which is the fresh start this is trying to avoid.
         Intent(context, MainActivity::class.java)
-            .setFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP),
+            .setFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP,
+            ),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
     )
 

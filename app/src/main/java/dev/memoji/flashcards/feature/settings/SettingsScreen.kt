@@ -202,6 +202,7 @@ private fun ReminderRows(
     onPickTime: () -> Unit,
 ) {
     val context = LocalContext.current
+    val blocked = status == ReminderStatus.BLOCKED
     // Either answer turns the setting on: a denial does not change what the user asked for,
     // and the row goes to BLOCKED, which says who is refusing and offers the way out.
     val requestPermission = rememberLauncherForActivityResult(
@@ -211,24 +212,25 @@ private fun ReminderRows(
     SettingRow(
         title = stringResource(R.string.settings_reminder),
         body = stringResource(
-            if (status == ReminderStatus.BLOCKED) {
-                R.string.settings_reminder_blocked
-            } else {
-                R.string.settings_reminder_body
-            },
+            if (blocked) R.string.settings_reminder_blocked else R.string.settings_reminder_body,
         ),
         checked = status == ReminderStatus.ON,
-        onCheckedChange = { wanted ->
-            when {
-                !wanted -> onSetEnabled(false)
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
+        onCheckedChange = {
+            val action = reminderSwitchAction(
+                status = status,
+                permissionNeeded = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU,
+            )
+            when (action) {
+                ReminderSwitchAction.TURN_ON -> onSetEnabled(true)
+                ReminderSwitchAction.TURN_OFF -> onSetEnabled(false)
+                ReminderSwitchAction.ASK_FOR_PERMISSION ->
                     requestPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                else -> onSetEnabled(true)
             }
         },
-        // Only when blocked is there anywhere useful for a tap on the row to go: the app
-        // cannot undo this itself, and saying so without saying where is no help at all.
-        onClick = if (status == ReminderStatus.BLOCKED) {
+        // Only when blocked is there anywhere useful for a tap on the row to go — and it is
+        // the only thing that still works once Android has stopped showing the prompt. The
+        // app cannot undo this itself, and saying so without saying where is no help at all.
+        onClick = if (blocked) {
             { context.startActivity(appNotificationSettings(context)) }
         } else {
             null

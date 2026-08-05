@@ -12,7 +12,7 @@ import org.junit.Test
  * The whole of the scheduling decision, kept away from WorkManager so it can be asked about
  * midnight and the clocks going forward without a device being involved.
  */
-class ReminderScheduleTest {
+class ReminderDelayTest {
 
     @Test
     fun `a time later today is later today`() {
