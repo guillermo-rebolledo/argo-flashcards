@@ -4,13 +4,14 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dev.memoji.flashcards.core.coroutines.ApplicationScope
 import dev.memoji.flashcards.core.data.CardRepository
-import dev.memoji.flashcards.core.data.DeckRepository
 import dev.memoji.flashcards.core.data.SettingsRepository
 import dev.memoji.flashcards.core.domain.composeSession
 import dev.memoji.flashcards.core.model.Card
 import dev.memoji.flashcards.core.model.Grade
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,9 +26,9 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 internal class SessionViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val deckRepository: DeckRepository,
     private val cardRepository: CardRepository,
     private val settingsRepository: SettingsRepository,
+    @ApplicationScope private val applicationScope: CoroutineScope,
 ) : ViewModel() {
 
     private val deckId: Long = checkNotNull(savedStateHandle[SessionRoute.DECK_ID_ARG]) {
@@ -37,7 +38,6 @@ internal class SessionViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<SessionUiState>(SessionUiState.Loading)
     val uiState: StateFlow<SessionUiState> = _uiState.asStateFlow()
 
-    private lateinit var deckName: String
     private var cards: List<Card> = emptyList()
     private var position = 0
     private var knewIt = 0
@@ -45,13 +45,9 @@ internal class SessionViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            val deck = deckRepository.observeDeck(deckId).first()
-            deckName = deck?.name.orEmpty()
-            if (deck == null) {
-                _uiState.value = SessionUiState.Empty
-                return@launch
-            }
             val length = settingsRepository.observeSessionLength().first().cards
+            // A Deck deleted before the Session started draws nothing, because the database
+            // took its Cards with it — so there is no separate check for one.
             begin(composeSession(cardRepository.cardsInDeck(deckId), length))
         }
     }
@@ -74,14 +70,16 @@ internal class SessionViewModel @Inject constructor(
             Grade.KNEW_IT -> knewIt++
             Grade.AGAIN -> misses += card
         }
-        viewModelScope.launch { cardRepository.recordGrade(card.id, grade) }
+        // Deliberately not `viewModelScope`: the user can leave the moment they have graded,
+        // and a Grade that is dropped because the screen went away is the silent data loss
+        // this whole feature is meant to avoid.
+        applicationScope.launch { cardRepository.recordGrade(card.id, grade) }
 
         position++
         _uiState.value = if (position < cards.size) {
             reviewing.copy(card = cards[position], revealed = false, position = position + 1)
         } else {
             SessionUiState.Finished(
-                deckName = deckName,
                 knewIt = knewIt,
                 total = cards.size,
                 misses = misses.toList(),
@@ -109,7 +107,6 @@ internal class SessionViewModel @Inject constructor(
             SessionUiState.Empty
         } else {
             SessionUiState.Reviewing(
-                deckName = deckName,
                 card = session.first(),
                 revealed = false,
                 position = 1,

@@ -46,7 +46,8 @@ internal class LocalCardRepository @Inject constructor(
     }
 }
 
-private fun CardEntity.asCard() = Card(
+/** Shared with [LocalDeckRepository], which counts a Deck's Cards through the same mapping. */
+internal fun CardEntity.asCard() = Card(
     id = id,
     deckId = deckId,
     front = front,

@@ -31,7 +31,7 @@ class LocalDeckRepositoryTest {
     fun openDatabase() {
         database = inMemoryDatabase()
         clock = MutableClock()
-        repository = LocalDeckRepository(database.deckDao(), clock)
+        repository = LocalDeckRepository(database.deckDao(), database.cardDao(), clock)
         cardRepository = LocalCardRepository(database.cardDao(), clock)
     }
 

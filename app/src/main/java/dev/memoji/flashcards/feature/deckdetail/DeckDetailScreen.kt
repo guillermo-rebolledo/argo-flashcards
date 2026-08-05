@@ -339,15 +339,17 @@ private fun CardFilterChips(selected: CardFilter, onSelect: (CardFilter) -> Unit
 @Composable
 private fun StartSessionBar(onStartSession: () -> Unit, bottomPadding: Dp) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
-        Button(
-            onClick = onStartSession,
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = bottomPadding)
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp)
-                .height(StartSessionButtonHeight),
+                .height(StartSessionBarHeight)
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center,
         ) {
-            Text(stringResource(R.string.session_start))
+            Button(onClick = onStartSession, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.session_start))
+            }
         }
     }
 }
@@ -446,8 +448,8 @@ private fun EmptyDeck(bottomPadding: Dp, modifier: Modifier = Modifier) {
     )
 }
 
-/** The height the design gives the start-Session button. */
-private val StartSessionButtonHeight = 56.dp
-
-/** What the bar around it occupies, so the FAB above can clear it. */
-private val StartSessionBarHeight = StartSessionButtonHeight + 28.dp
+/**
+ * How much room the bar takes, which is both what it lays itself out in and what the FAB
+ * above it has to clear — one number, so the two cannot drift apart.
+ */
+private val StartSessionBarHeight = 84.dp

@@ -267,7 +267,7 @@ private fun UpNextCard(
                 style = MaterialTheme.typography.bodyMedium,
             )
             LinearProgressIndicator(
-                progress = { summary.masteredCount.toFloat() / summary.cardCount },
+                progress = { summary.masteredFraction },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 6.dp),

@@ -7,9 +7,11 @@ import dev.memoji.flashcards.core.data.FakeSettingsRepository
 import dev.memoji.flashcards.core.model.Card
 import dev.memoji.flashcards.core.model.Grade
 import dev.memoji.flashcards.core.model.SessionLength
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -49,7 +51,6 @@ class SessionViewModelTest {
         val reviewing = viewModel.reviewing()
         assertEquals(SessionLength.DEFAULT.cards, reviewing.total)
         assertEquals(1, reviewing.position)
-        assertEquals("Big-O notation", reviewing.deckName)
     }
 
     @Test
@@ -225,6 +226,7 @@ class SessionViewModelTest {
         assertEquals(SessionUiState.Empty, viewModel().uiState.value)
     }
 
+    /** Deleting the Deck took its Cards with it, so there is nothing left to draw. */
     @Test
     fun `a Deck that is already gone has no Session to run`() = runTest {
         addCards(3)
@@ -237,11 +239,18 @@ class SessionViewModelTest {
         repeat(count) { cardRepository.createCard(deckId, "Front $it", "Back $it") }
     }
 
-    private fun viewModel() = SessionViewModel(
+    /**
+     * A Grade is written on a scope the app owns, not on the ViewModel's — the user can leave
+     * the moment they have graded. The test hands it a scope of its own for the same reason,
+     * and the test's own scope cancels it at the end.
+     */
+    private fun TestScope.viewModel() = SessionViewModel(
         savedStateHandle = SavedStateHandle(mapOf(SessionRoute.DECK_ID_ARG to deckId)),
-        deckRepository = deckRepository,
         cardRepository = cardRepository,
         settingsRepository = settingsRepository,
+        applicationScope = CoroutineScope(
+            backgroundScope.coroutineContext + UnconfinedTestDispatcher(testScheduler),
+        ),
     )
 
     private fun SessionViewModel.reviewing() = uiState.value as SessionUiState.Reviewing

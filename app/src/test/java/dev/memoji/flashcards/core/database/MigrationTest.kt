@@ -4,7 +4,6 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import dev.memoji.flashcards.core.model.Card
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -32,7 +31,7 @@ class MigrationTest {
             .build()
 
         try {
-            val deck = database.deckDao().observeSummaries(Card.MASTERY_THRESHOLD).first().single()
+            val deck = database.deckDao().observeAll().first().single()
             assertEquals("Big-O notation", deck.name)
             assertEquals(1_000L, deck.createdAt)
 
@@ -62,7 +61,7 @@ class MigrationTest {
             .build()
 
         try {
-            val deckId = database.deckDao().observeSummaries(Card.MASTERY_THRESHOLD).first().single().id
+            val deckId = database.deckDao().observeAll().first().single().id
             database.cardDao().insert(
                 CardEntity(deckId = deckId, front = "O(1)", back = "b", createdAt = 2_000L),
             )

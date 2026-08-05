@@ -16,6 +16,13 @@ interface CardDao {
     @Query("SELECT * FROM cards WHERE deck_id = :deckId ORDER BY created_at DESC, id DESC")
     fun observeByDeck(deckId: Long): Flow<List<CardEntity>>
 
+    /**
+     * Every Card in every Deck. The Deck list counts its Cards from this rather than from a
+     * `COUNT` in SQL, so Mastered stays derived in the one place Kotlin derives it.
+     */
+    @Query("SELECT * FROM cards")
+    fun observeAll(): Flow<List<CardEntity>>
+
     /** A one-shot read of the whole Deck, which a Session is composed from. */
     @Query("SELECT * FROM cards WHERE deck_id = :deckId")
     suspend fun getByDeck(deckId: Long): List<CardEntity>

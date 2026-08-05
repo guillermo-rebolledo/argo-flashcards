@@ -17,7 +17,6 @@ internal sealed interface SessionUiState {
      * 5" — the Card the user is on, not the number of Cards behind them.
      */
     data class Reviewing(
-        val deckName: String,
         val card: Card,
         val revealed: Boolean,
         val position: Int,
@@ -34,7 +33,6 @@ internal sealed interface SessionUiState {
      * just saw rather than as what grading them has since done to their streaks.
      */
     data class Finished(
-        val deckName: String,
         val knewIt: Int,
         val total: Int,
         val misses: List<Card>,

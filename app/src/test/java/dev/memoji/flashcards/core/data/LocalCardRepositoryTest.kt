@@ -34,7 +34,7 @@ class LocalCardRepositoryTest {
         database = inMemoryDatabase()
         clock = MutableClock()
         repository = LocalCardRepository(database.cardDao(), clock)
-        deckRepository = LocalDeckRepository(database.deckDao(), clock)
+        deckRepository = LocalDeckRepository(database.deckDao(), database.cardDao(), clock)
         deckId = deckRepository.createDeck("Big-O notation")
     }
 

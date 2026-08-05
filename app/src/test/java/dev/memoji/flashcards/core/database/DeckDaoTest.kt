@@ -1,6 +1,5 @@
 package dev.memoji.flashcards.core.database
 
-import dev.memoji.flashcards.core.model.Card
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -36,7 +35,7 @@ class DeckDaoTest {
     fun `an inserted Deck comes back in the list`() = runTest {
         dao.insert(deckEntity(name = "Big-O notation"))
 
-        val decks = dao.decks()
+        val decks = dao.observeAll().first()
 
         assertEquals(listOf("Big-O notation"), decks.map { it.name })
     }
@@ -46,7 +45,7 @@ class DeckDaoTest {
         val id = dao.insert(deckEntity(name = "Git basics"))
 
         assertTrue("expected a generated id, got $id", id > 0)
-        assertEquals(id, dao.decks().single().id)
+        assertEquals(id, dao.observeAll().first().single().id)
     }
 
     @Test
@@ -55,7 +54,7 @@ class DeckDaoTest {
         dao.insert(deckEntity(name = "Newest", createdAt = 3_000L))
         dao.insert(deckEntity(name = "Middle", createdAt = 2_000L))
 
-        val decks = dao.decks()
+        val decks = dao.observeAll().first()
 
         assertEquals(listOf("Newest", "Middle", "Oldest"), decks.map { it.name })
     }
@@ -65,7 +64,7 @@ class DeckDaoTest {
         val first = dao.insert(deckEntity(name = "First", createdAt = 1_000L))
         val second = dao.insert(deckEntity(name = "Second", createdAt = 1_000L))
 
-        val decks = dao.decks()
+        val decks = dao.observeAll().first()
 
         assertEquals(listOf(second, first), decks.map { it.id })
     }
@@ -76,7 +75,7 @@ class DeckDaoTest {
 
         dao.rename(id, "Big-O notation")
 
-        val deck = dao.decks().single()
+        val deck = dao.observeAll().first().single()
         assertEquals("Big-O notation", deck.name)
         assertEquals(1_000L, deck.createdAt)
     }
@@ -87,7 +86,7 @@ class DeckDaoTest {
 
         dao.rename(id = 404L, name = "Ghost")
 
-        assertEquals(listOf("Git basics"), dao.decks().map { it.name })
+        assertEquals(listOf("Git basics"), dao.observeAll().first().map { it.name })
     }
 
     @Test
@@ -97,18 +96,14 @@ class DeckDaoTest {
 
         dao.delete(doomed)
 
-        assertEquals(listOf("Survivor"), dao.decks().map { it.name })
+        assertEquals(listOf("Survivor"), dao.observeAll().first().map { it.name })
     }
 
     @Test
     fun `the list starts empty`() = runTest {
-        assertEquals(emptyList<DeckSummaryEntity>(), dao.decks())
+        assertEquals(emptyList<DeckEntity>(), dao.observeAll().first())
     }
 
     private fun deckEntity(name: String, createdAt: Long = 1_000L) =
         DeckEntity(name = name, createdAt = createdAt)
-
-    /** The list the Deck screen reads, which is the only way the DAO hands back every Deck. */
-    private suspend fun DeckDao.decks() =
-        observeSummaries(Card.MASTERY_THRESHOLD).first()
 }

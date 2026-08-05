@@ -21,4 +21,10 @@ data class DeckSummary(
 
     /** Nothing left to learn here — still studiable, but not where a user should be sent. */
     val isFullyMastered: Boolean get() = hasCards && learningCount == 0
+
+    /**
+     * How far through the Deck the user is, for the bar that shows it. A Deck with no Cards
+     * reads as nothing done rather than dividing by zero.
+     */
+    val masteredFraction: Float get() = if (hasCards) masteredCount.toFloat() / cardCount else 0f
 }
