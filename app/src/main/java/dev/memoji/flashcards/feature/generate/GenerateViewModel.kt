@@ -50,7 +50,9 @@ internal class GenerateViewModel @Inject constructor(
 
         _uiState.value = GenerateUiState.Busy
         viewModelScope.launch {
-            when (val result = cardGenerator.generate(Source.PastedText(entry.text))) {
+            // Whatever the box was read as is what gets generated from — the same call the
+            // screen showed a hint from before the tap.
+            when (val result = cardGenerator.generate(entry.source)) {
                 is GenerationResult.Generated -> _uiState.value = GenerateUiState.Proposed(
                     deckName = result.deckName,
                     cards = result.cards.map { ProposedCard(it) },
@@ -80,6 +82,16 @@ internal class GenerateViewModel @Inject constructor(
         _uiState.update { state ->
             (state as? GenerateUiState.Proposed)?.copy(deckName = name) ?: state
         }
+    }
+
+    /**
+     * The way out of a page that would not open: the box is emptied of the link, ready for the
+     * text it was meant to hold. Keeping the URL there would leave the failure's own message
+     * pointing at the thing that caused it.
+     */
+    fun pasteTextInstead() {
+        if (_uiState.value !is GenerateUiState.Entry) return
+        _uiState.value = GenerateUiState.Entry()
     }
 
     /** Back to the box, keeping what was pasted so a discarded Generation is not a retype. */

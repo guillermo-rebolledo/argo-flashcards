@@ -72,6 +72,7 @@ fun GenerateScreen(
         onSetDeckName = viewModel::setDeckName,
         onSave = viewModel::save,
         onBackToEntry = viewModel::backToEntry,
+        onPasteTextInstead = viewModel::pasteTextInstead,
         onCreateEmptyDeck = viewModel::createEmptyDeck,
         onOpenSettings = onOpenSettings,
         onClose = onClose,
@@ -88,6 +89,7 @@ internal fun GenerateScreen(
     onSetDeckName: (String) -> Unit,
     onSave: () -> Unit,
     onBackToEntry: (String) -> Unit,
+    onPasteTextInstead: () -> Unit,
     onCreateEmptyDeck: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onClose: () -> Unit,
@@ -130,6 +132,7 @@ internal fun GenerateScreen(
                     onSetText = onSetText,
                     onGenerate = onGenerate,
                     onOpenSettings = onOpenSettings,
+                    onPasteTextInstead = onPasteTextInstead,
                     onWriteThemMyself = { namingDeck = true },
                     bottomPadding = contentPadding.calculateBottomPadding(),
                     modifier = Modifier.weight(1f),
@@ -188,6 +191,7 @@ private fun SourceEntry(
     onSetText: (String) -> Unit,
     onGenerate: () -> Unit,
     onOpenSettings: () -> Unit,
+    onPasteTextInstead: () -> Unit,
     onWriteThemMyself: () -> Unit,
     bottomPadding: Dp,
     modifier: Modifier = Modifier,
@@ -218,8 +222,16 @@ private fun SourceEntry(
                 .padding(20.dp),
         )
 
-        // What they gave it, in their terms. Only once there is something to count.
-        if (uiState.wordCount > 0) {
+        // What the app made of what is in the box, in the user's terms: a link it recognised
+        // as one, or a count of what they pasted. Only once there is something to say.
+        if (uiState.isUrl) {
+            Text(
+                text = stringResource(R.string.generate_link_detected),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+        } else if (uiState.wordCount > 0) {
             Text(
                 text = pluralStringResource(
                     R.plurals.generate_word_count,
@@ -237,6 +249,7 @@ private fun SourceEntry(
                 copy = copy,
                 onOpenSettings = onOpenSettings,
                 onTryAgain = onGenerate,
+                onPasteTextInstead = onPasteTextInstead,
             )
         }
 
@@ -272,6 +285,7 @@ private fun GenerationFailureMessage(
     copy: FailureCopy,
     onOpenSettings: () -> Unit,
     onTryAgain: () -> Unit,
+    onPasteTextInstead: () -> Unit,
 ) {
     Surface(
         color = MaterialTheme.colorScheme.errorContainer,
@@ -292,6 +306,9 @@ private fun GenerationFailureMessage(
                 }
                 FailureAction.TRY_AGAIN -> TextButton(onClick = onTryAgain) {
                     Text(stringResource(R.string.generate_try_again))
+                }
+                FailureAction.PASTE_TEXT -> TextButton(onClick = onPasteTextInstead) {
+                    Text(stringResource(R.string.generate_paste_text_instead))
                 }
                 FailureAction.NONE -> Unit
             }

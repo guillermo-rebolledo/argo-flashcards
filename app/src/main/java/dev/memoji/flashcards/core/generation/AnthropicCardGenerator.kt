@@ -17,7 +17,9 @@ import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
@@ -50,15 +52,11 @@ internal class AnthropicCardGenerator(
         // Not an error: a fresh install has no key, and the way out of that is Settings.
         if (apiKey.isNullOrBlank()) return GenerationResult.Failed(GenerationFailure.NO_KEY_SET)
 
-        val text = when (source) {
-            is Source.PastedText -> source.text
-        }
-
         val request = Request.Builder()
             .url(endpoint)
             .header("x-api-key", apiKey)
             .header("anthropic-version", ANTHROPIC_VERSION)
-            .post(requestBody(text).toRequestBody(JSON_MEDIA_TYPE))
+            .post(requestBody(source).toRequestBody(JSON_MEDIA_TYPE))
             .build()
 
         // The response body is read on this dispatcher rather than on whichever thread the
@@ -77,6 +75,13 @@ internal class AnthropicCardGenerator(
         if (!response.isSuccessful) return GenerationResult.Failed(statusFailure(response.code))
 
         val message = decodeOrNull<MessageResponse>(response.body.string()) ?: return unexpected
+        // Read before anything the model said: a page that never arrived is the reason for
+        // whatever came after it, and it is the one failure with its own way forward. Every
+        // attempt has to have failed — a retry that worked is a page that was read.
+        val fetches = message.content.filter { it.type == FETCH_RESULT_BLOCK }
+        if (fetches.isNotEmpty() && fetches.all(ContentBlock::isFailedFetch)) {
+            return pageUnreadable
+        }
         return when (message.stopReason) {
             // A refusal is an outcome, not an error — it comes back as a 200 like any answer.
             STOP_REFUSAL -> GenerationResult.Failed(GenerationFailure.DECLINED)
@@ -88,8 +93,17 @@ internal class AnthropicCardGenerator(
     }
 
     private fun MessageResponse.asResult(): GenerationResult {
-        val json = content.firstOrNull { it.type == TEXT_BLOCK }?.text ?: return unexpected
-        val deck = decodeOrNull<GeneratedDeckPayload>(json) ?: return unexpected
+        // Every text block, not the first: a Generation that fetched a page can say what it is
+        // about to do before it does it, and the Deck is then the second thing it wrote.
+        val deck = content
+            .filter { it.type == TEXT_BLOCK }
+            .firstNotNullOfOrNull { decodeOrNull<GeneratedDeckPayload>(it.text) }
+            ?: return unexpected
+
+        // A paywall, a consent wall, or a page that is only assembled by a browser all fetch
+        // perfectly well and arrive as nothing worth reading. The model is the only thing that
+        // can tell those apart from thin material, and this is it saying so.
+        if (deck.unreadable) return pageUnreadable
 
         val cards = deck.cards
             .map { GeneratedCard(front = it.front.trim(), back = it.back.trim()) }
@@ -112,14 +126,35 @@ internal class AnthropicCardGenerator(
         null
     }
 
-    private fun requestBody(text: String): String = json.encodeToString(
-        MessageRequest(
-            model = MODEL,
-            maxTokens = MAX_TOKENS,
-            system = SYSTEM_PROMPT,
-            outputConfig = OutputConfig(effort = EFFORT, format = deckFormat),
-            messages = listOf(RequestMessage(role = "user", content = text)),
-        ),
+    /**
+     * A URL and a paste are the same request with two differences: what the message says, and
+     * whether the fetch tool is on the table. The tool is only offered for a URL, so a paste
+     * that mentions a link cannot turn into a page request the user did not ask for.
+     */
+    private fun requestBody(source: Source): String = json.encodeToString(
+        when (source) {
+            is Source.PastedText -> request(system = SYSTEM_PROMPT, message = source.text)
+            // The URL has to be in the message: the tool only fetches addresses that are
+            // already in the conversation, never ones the model has composed.
+            is Source.Url -> request(
+                system = "$SYSTEM_PROMPT\n\n$PAGE_PROMPT",
+                message = "Make cards from the page at ${source.url}",
+                tools = listOf(webFetchTool),
+            )
+        },
+    )
+
+    private fun request(
+        system: String,
+        message: String,
+        tools: List<JsonElement>? = null,
+    ) = MessageRequest(
+        model = MODEL,
+        maxTokens = MAX_TOKENS,
+        system = system,
+        outputConfig = OutputConfig(effort = EFFORT, format = deckFormat),
+        messages = listOf(RequestMessage(role = "user", content = message)),
+        tools = tools,
     )
 
     private companion object {
@@ -143,14 +178,36 @@ internal class AnthropicCardGenerator(
         const val STOP_REFUSAL = "refusal"
         const val STOP_MAX_TOKENS = "max_tokens"
 
+        /**
+         * The page is read by Anthropic, not by the device — see ADR 0005. The basic fetch,
+         * rather than the filtering one: filtering trims a page down to what a question needs,
+         * and here the whole page is the question. The cap below is what bounds it instead.
+         */
+        const val WEB_FETCH_TOOL = "web_fetch_20250910"
+        const val WEB_FETCH_NAME = "web_fetch"
+
+        /**
+         * Roughly a hundred kilobytes of page, which is a long article with room to spare.
+         * Past that the tool truncates rather than the request growing without limit: a book
+         * behind one URL must not be able to spend a fortune of the user's own money.
+         */
+        const val MAX_CONTENT_TOKENS = 25_000
+
+        /** One fetch, and one retry for the address that redirects or blinks. */
+        const val MAX_FETCHES = 2
+
         val JSON_MEDIA_TYPE = "application/json".toMediaType()
 
         val json = Json {
             ignoreUnknownKeys = true
             encodeDefaults = true
+            // A paste sends no `tools` key at all rather than a null one.
+            explicitNulls = false
         }
 
         val unexpected = GenerationResult.Failed(GenerationFailure.UNEXPECTED)
+
+        val pageUnreadable = GenerationResult.Failed(GenerationFailure.PAGE_UNREADABLE)
 
         /**
          * The prompt guidance from the design, and nothing about JSON — the schema below is
@@ -172,6 +229,35 @@ internal class AnthropicCardGenerator(
         """.trimIndent()
 
         /**
+         * Only sent with a URL. The last line matters most: a page that did not arrive must
+         * not become Cards about the address, which is what a model with nothing to read and
+         * a schema to fill would otherwise write.
+         */
+        val PAGE_PROMPT = """
+            The material is the page at the link in the message. Read it with the web_fetch
+            tool and write the cards from what the page says.
+
+            Some pages arrive without arriving: a login or paywall notice in place of the
+            article, a cookie or consent screen, or a shell that says nothing because the page
+            is only assembled once a browser runs it. If what came back is one of those, or is
+            otherwise not the material it promised, set unreadable to true and write no cards.
+            Never guess from the address, and never write cards from what you already know
+            about the page — say it could not be read instead.
+        """.trimIndent()
+
+        /**
+         * The one server-side tool the app uses, and the cap on what it may bring back.
+         * Citations stay off — a Card cites nothing, and asking for them alongside a supplied
+         * schema is a request the API turns down.
+         */
+        val webFetchTool: JsonObject = buildJsonObject {
+            put("type", WEB_FETCH_TOOL)
+            put("name", WEB_FETCH_NAME)
+            put("max_uses", MAX_FETCHES)
+            put("max_content_tokens", MAX_CONTENT_TOKENS)
+        }
+
+        /**
          * A supplied schema, so the response is guaranteed to parse. This replaces the
          * prototype's "find the first {...} and hope" — there is no parse-failure path here.
          */
@@ -183,6 +269,18 @@ internal class AnthropicCardGenerator(
                     putJsonObject("deck_name") {
                         put("type", "string")
                         put("description", "The topic of the material, in a few words.")
+                    }
+                    // Not required, and never set for a paste: the only material that can
+                    // fail to arrive is a page. It is how a paywall — which the fetch itself
+                    // calls a success — becomes the failure the user can act on.
+                    putJsonObject("unreadable") {
+                        put("type", "boolean")
+                        put(
+                            "description",
+                            "True when the page could not be read: a login or paywall notice " +
+                                "in place of the material, or a page that only exists once a " +
+                                "browser has run it. No cards when this is true.",
+                        )
                     }
                     putJsonObject("cards") {
                         put("type", "array")
@@ -269,6 +367,8 @@ private data class MessageRequest(
     val system: String,
     @SerialName("output_config") val outputConfig: OutputConfig,
     val messages: List<RequestMessage>,
+    /** Omitted rather than sent empty when there is no page to fetch. */
+    val tools: List<JsonElement>? = null,
 )
 
 @Serializable
@@ -284,13 +384,33 @@ private data class MessageResponse(
 )
 
 @Serializable
-private data class ContentBlock(val type: String, val text: String? = null)
+private data class ContentBlock(
+    val type: String,
+    val text: String? = null,
+    /** Present on a tool result: the page, or why there is no page. */
+    val content: JsonElement? = null,
+)
+
+/**
+ * A fetch that did not work comes back as an ordinary part of a successful answer — the tool
+ * result carries an error type instead of a document, and the model carries on regardless.
+ * Which error it was does not change what the user can do about it, so it is not read.
+ */
+private fun ContentBlock.isFailedFetch(): Boolean {
+    val resultType = (content as? JsonObject)?.get("type") as? JsonPrimitive
+    return resultType?.contentOrNull == FETCH_FAILED
+}
+
+private const val FETCH_RESULT_BLOCK = "web_fetch_tool_result"
+private const val FETCH_FAILED = "web_fetch_tool_result_error"
 
 /** What the schema promises comes back. */
 @Serializable
 private data class GeneratedDeckPayload(
     @SerialName("deck_name") val deckName: String,
     val cards: List<GeneratedCardPayload> = emptyList(),
+    /** Only a page can be unreadable, so a paste never sets this. */
+    val unreadable: Boolean = false,
 )
 
 @Serializable

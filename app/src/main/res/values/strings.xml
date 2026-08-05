@@ -15,14 +15,16 @@
     <string name="action_remove">Remove</string>
 
     <string name="generate_title">Add cards</string>
-    <string name="generate_headline">Paste some text</string>
-    <string name="generate_body">A few paragraphs is enough. Cards come back as one idea each.</string>
-    <string name="generate_placeholder">Paste your notes</string>
+    <string name="generate_headline">Paste some text or a link</string>
+    <string name="generate_body">A few paragraphs or a page worth reading. Cards come back as one idea each.</string>
+    <string name="generate_placeholder">Paste your notes, or a link</string>
     <!-- What the app made of what was pasted, before anything is generated from it. -->
     <plurals name="generate_word_count">
         <item quantity="one">%1$d word</item>
         <item quantity="other">%1$d words</item>
     </plurals>
+    <!-- Said before generating, so the user can see it recognised a link as a link. -->
+    <string name="generate_link_detected">Link · cards come from this page</string>
     <string name="generate_action">Generate cards</string>
     <string name="generate_write_them_myself">Write them myself</string>
     <!-- Said plainly, because a wait with nothing on screen reads as the app having frozen. -->
@@ -38,6 +40,7 @@
     </plurals>
     <string name="generate_open_settings">Open settings</string>
     <string name="generate_try_again">Try again</string>
+    <string name="generate_paste_text_instead">Paste the text instead</string>
     <!-- Each failure says what happened and, above all, what to do next. The first one is the
          one every new install meets, and it must not read as something being broken. -->
     <string name="generate_error_no_key">Generating cards needs your own Anthropic API key. Add one in Settings and this will be waiting.</string>
@@ -48,6 +51,7 @@
     <string name="generate_error_declined">The model declined to write cards from this. Different material should be fine.</string>
     <string name="generate_error_no_cards">Nothing usable came back. Try a shorter piece, or one with more to remember in it.</string>
     <string name="generate_error_unexpected">Anthropic could not be reached just now. Try again in a moment.</string>
+    <string name="generate_error_page_unreadable">That page could not be read. It may need a login, or be one that only appears once a browser runs it.</string>
 
     <string name="decks_add_cards">Add cards</string>
     <string name="decks_new_deck">New deck</string>
