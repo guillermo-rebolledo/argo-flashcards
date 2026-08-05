@@ -163,6 +163,28 @@
     <string name="settings_api_key_label">API key</string>
     <string name="settings_api_key_dialog_body">Generation goes straight from this phone to Anthropic with your key. It is stored encrypted, kept out of backups, and never sent anywhere else.</string>
 
+    <!--
+        The nudge itself. No count, no streak, no "cards waiting" — per ADR 0001 there is no
+        backlog for it to report, and inventing one would undo the point of the whole app.
+        It asks, it does not tell off, and the second line says the door is open, not overdue.
+    -->
+    <string name="reminder_title">Two minutes?</string>
+    <string name="reminder_body">Your Decks are here whenever you want them.</string>
+    <string name="reminder_channel_name">Daily reminder</string>
+    <string name="reminder_channel_description">One nudge a day, at the time you chose. Never a count of anything.</string>
+
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminder">Daily reminder</string>
+    <string name="settings_reminder_body">One nudge a day. No counts, nothing waiting.</string>
+    <!-- Replaces the line above when Android is dropping the app's notifications, so the
+         switch sitting off is explained rather than looking broken. Says who turned it off
+         and where to undo it, because the app cannot. -->
+    <string name="settings_reminder_blocked">Android is blocking notifications for Flashcards. Tap to turn them back on.</string>
+    <string name="settings_reminder_time">Reminder time</string>
+    <string name="settings_reminder_time_pick">Pick a reminder time</string>
+    <!-- Honest about what is promised: the hour, not the minute. See ADR 0004. -->
+    <string name="settings_reminder_time_body">Arrives around this time — near enough, so your battery is left alone.</string>
+
     <string name="settings_appearance">Appearance</string>
     <string name="settings_dark_theme">Dark theme</string>
     <string name="settings_dark_theme_body">Follows your device until you set it here</string>

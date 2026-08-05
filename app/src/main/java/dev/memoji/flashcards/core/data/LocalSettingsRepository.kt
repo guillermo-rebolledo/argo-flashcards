@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import dev.memoji.flashcards.core.model.ReminderTime
 import dev.memoji.flashcards.core.model.SessionLength
 import dev.memoji.flashcards.core.model.ThemePreference
 import dev.memoji.flashcards.core.model.UserSettings
@@ -30,6 +31,12 @@ internal class LocalSettingsRepository @Inject constructor(
             theme = stored[THEME]?.let(ThemePreference::ofName) ?: ThemePreference.DEFAULT,
             reducedMotion = stored[REDUCED_MOTION] ?: UserSettings.DEFAULT.reducedMotion,
             hideDayStreak = stored[HIDE_DAY_STREAK] ?: UserSettings.DEFAULT.hideDayStreak,
+            remindersEnabled = stored[REMINDERS_ENABLED]
+                ?: UserSettings.DEFAULT.remindersEnabled,
+            // Stored as the minute of the day rather than as two keys, so there is no way to
+            // read back an hour the user set with a minute they did not.
+            reminderTime = stored[REMINDER_TIME]?.let(ReminderTime::ofMinutesOfDay)
+                ?: ReminderTime.DEFAULT,
         )
     }
 
@@ -49,10 +56,20 @@ internal class LocalSettingsRepository @Inject constructor(
         preferences.edit { it[HIDE_DAY_STREAK] = hideDayStreak }
     }
 
+    override suspend fun setRemindersEnabled(enabled: Boolean) {
+        preferences.edit { it[REMINDERS_ENABLED] = enabled }
+    }
+
+    override suspend fun setReminderTime(time: ReminderTime) {
+        preferences.edit { it[REMINDER_TIME] = time.minutesOfDay }
+    }
+
     private companion object {
         val SESSION_LENGTH = intPreferencesKey("session_length")
         val THEME = stringPreferencesKey("theme")
         val REDUCED_MOTION = booleanPreferencesKey("reduced_motion")
         val HIDE_DAY_STREAK = booleanPreferencesKey("hide_day_streak")
+        val REMINDERS_ENABLED = booleanPreferencesKey("reminders_enabled")
+        val REMINDER_TIME = intPreferencesKey("reminder_time")
     }
 }

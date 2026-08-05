@@ -72,6 +72,13 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
 
+    // The daily reminder. WorkManager re-registers its own work after a reboot, which is the
+    // reason it is here rather than AlarmManager — see ADR 0004. The androidx Hilt compiler is
+    // what turns `@HiltWorker` into a worker the app's factory can build.
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+
     // The one network call the app makes — the Anthropic Messages API, straight from the
     // device with the user's own key. See ADR 0002 for why there is no backend to talk to.
     implementation(libs.okhttp)
@@ -89,4 +96,5 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.work.testing)
 }
