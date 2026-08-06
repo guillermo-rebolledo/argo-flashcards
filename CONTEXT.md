@@ -26,7 +26,8 @@ _Avoid_: Answer, definition, meaning
 ### Generation
 
 **Source**:
-The raw material a Deck is generated from: either pasted text or a URL.
+The raw material a Deck is generated from: either pasted text or a URL. It reaches the app by
+being pasted into the box, or shared in from another app — the same Source either way.
 _Avoid_: Input, material, content
 
 **Generation**:

@@ -29,13 +29,31 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Flashcards">
 
+        <!--
+          singleTask so that a share lands in the app the user left rather than in a second
+          copy of it launched into the sharing app's task. The one instance is brought forward
+          with its back stack intact and the share arrives at onNewIntent; without this, every
+          share from a browser would start the app over.
+        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
+            android:launchMode="singleTask"
             android:theme="@style/Theme.Flashcards">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+              What puts the app in the share sheet. A shared link and a shared selection are
+              both text/plain — which of the two it is is decided from the text itself, not
+              from the mime type, so one filter covers both.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
 
