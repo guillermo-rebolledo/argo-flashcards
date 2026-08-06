@@ -31,7 +31,7 @@ import dev.memoji.flashcards.feature.settings.SettingsScreen
 import dev.memoji.flashcards.ui.navigation.TopLevelDestination
 
 /**
- * [sharedText] is material another app sent in. It opens the Add Cards flow with the text
+ * [sharedText] is a Source another app sent in. It opens the Add Cards flow with the text
  * already in the box; the flow itself takes it from there.
  */
 @Composable

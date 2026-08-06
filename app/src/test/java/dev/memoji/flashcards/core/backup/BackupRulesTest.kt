@@ -6,7 +6,9 @@ import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.test.core.app.ApplicationProvider
 import dev.memoji.flashcards.R
 import dev.memoji.flashcards.core.data.EncryptedApiKeyRepository
+import dev.memoji.flashcards.core.database.DeckEntity
 import dev.memoji.flashcards.core.database.FlashcardsDatabase
+import dev.memoji.flashcards.core.database.onDiskDatabase
 import dev.memoji.flashcards.core.datastore.PreferencesModule
 import java.io.File
 import javax.crypto.KeyGenerator
@@ -79,6 +81,8 @@ class BackupRulesTest {
     fun `what is backed up is the database and the settings, and nothing else`() {
         val expected = listOf(
             Include("database", FlashcardsDatabase.DATABASE_NAME),
+            Include("database", "${FlashcardsDatabase.DATABASE_NAME}-wal"),
+            Include("database", "${FlashcardsDatabase.DATABASE_NAME}-shm"),
             Include("file", "datastore"),
         )
 
@@ -87,13 +91,41 @@ class BackupRulesTest {
         assertEquals(expected, fullBackup)
     }
 
-    /** The only record of a Deck, and the file Room actually opens. */
+    /**
+     * The inclusion side, checked the same way as the exclusion side: a Deck is written through
+     * the real database, and every file Room left on disk for it has to be covered.
+     *
+     * Room runs in write-ahead logging mode, so the Deck just written may live in `-wal` and
+     * not in the database file at all — and an `include` naming a file is a starting point for
+     * a walk that a file has nothing below. Naming only `flashcards.db` would back up a
+     * database with the newest Decks missing, which is exactly the failure that looks like it
+     * worked. This fails if Room's journal mode changes and the rules do not follow.
+     */
     @Test
-    fun `the database rule names the database the app opens`() {
-        val database = context.getDatabasePath(FlashcardsDatabase.DATABASE_NAME)
+    fun `every file the database is made of is backed up`() = runTest {
+        val database = onDiskDatabase()
+        database.deckDao().insert(DeckEntity(name = "Big-O notation", createdAt = 0L))
 
-        assertTrue(cloudBackup.any { it.covers(database) })
-        assertTrue(fullBackup.any { it.covers(database) })
+        val files = databaseFiles()
+        assertTrue("Room wrote no database", files.isNotEmpty())
+        files.forEach { file ->
+            assertTrue("${file.name} is backed up by nothing", cloudBackup.any { it.covers(file) })
+            assertTrue("${file.name} is backed up by nothing", fullBackup.any { it.covers(file) })
+        }
+        database.close()
+    }
+
+    /**
+     * WorkManager keeps its own database beside ours, and a device's pending work is not
+     * something to carry onto another device — the reminder is re-registered from the setting,
+     * not restored from a queue. Naming the whole domain rather than the files would have
+     * swept it in.
+     */
+    @Test
+    fun `nothing backs up a database that is not ours`() {
+        val other = context.getDatabasePath("androidx.work.workdb")
+
+        assertTrue(allIncludes().none { it.covers(other) })
     }
 
     /** A preference is cheap to lose and free to carry over — but only if the rule reaches it. */
@@ -113,32 +145,41 @@ class BackupRulesTest {
 
     private fun allIncludes() = cloudBackup + deviceTransfer + fullBackup
 
+    /** Every file Room left on disk for our database, whatever it chose to call them. */
+    private fun databaseFiles(): List<File> {
+        val database = context.getDatabasePath(FlashcardsDatabase.DATABASE_NAME)
+        return database.parentFile?.listFiles().orEmpty()
+            .filter { it.name.startsWith(FlashcardsDatabase.DATABASE_NAME) }
+    }
+
     /** Every file the key could have been written into, whatever it ended up being called. */
     private fun credentialFiles(): List<File> =
         File(context.dataDir, "shared_prefs").listFiles().orEmpty().toList()
 
     /** One `include` line, as the platform reads it: a storage area and a path inside it. */
-    private data class Include(val domain: String, val path: String) {
+    private data class Include(val domain: String, val path: String)
 
-        /** Whether the rule would sweep [file] into a backup — a file, or a directory of them. */
-        fun covers(file: File): Boolean {
-            val root = domainRoot ?: return false
-            val included = File(root, path).canonicalFile
-            val candidate = file.canonicalFile
-            return candidate == included || candidate.path.startsWith("${included.path}${File.separator}")
-        }
+    /**
+     * Whether the rule would sweep [file] into a backup. The platform resolves an include
+     * against its domain's directory and then walks it, so a rule naming a directory covers
+     * what is under it and a rule naming a file covers only that file — which is the whole
+     * reason the write-ahead log has to be named as well.
+     */
+    private fun Include.covers(file: File): Boolean {
+        val root = domainRoot() ?: return false
+        val included = File(root, path).canonicalFile
+        val candidate = file.canonicalFile
+        return candidate == included ||
+            candidate.path.startsWith("${included.path}${File.separator}")
+    }
 
-        private val domainRoot: File?
-            get() {
-                val context: Context = ApplicationProvider.getApplicationContext()
-                return when (domain) {
-                    "root" -> context.dataDir
-                    "file" -> context.filesDir
-                    "database" -> context.getDatabasePath("any").parentFile
-                    "sharedpref" -> File(context.dataDir, "shared_prefs")
-                    else -> null
-                }
-            }
+    /** Where each domain lives on this device, asked of the same Context the app would ask. */
+    private fun Include.domainRoot(): File? = when (domain) {
+        "root" -> context.dataDir
+        "file" -> context.filesDir
+        "database" -> context.getDatabasePath("any").parentFile
+        "sharedpref" -> File(context.dataDir, "shared_prefs")
+        else -> null
     }
 
     /**

@@ -6,5 +6,7 @@
 -->
 <full-backup-content>
     <include domain="database" path="flashcards.db" />
+    <include domain="database" path="flashcards.db-wal" />
+    <include domain="database" path="flashcards.db-shm" />
     <include domain="file" path="datastore" />
 </full-backup-content>

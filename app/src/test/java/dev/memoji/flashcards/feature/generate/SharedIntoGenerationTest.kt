@@ -122,8 +122,44 @@ class SharedIntoGenerationTest {
         assertEquals(GenerateTarget.NewDeck, viewModel().uiState.value.target)
     }
 
-    private fun viewModel() = GenerateViewModel(
-        savedStateHandle = SavedStateHandle(),
+    /**
+     * The same answer when the flow was already aimed at a Deck. An article shared in from a
+     * browser has nothing to do with the Deck the user happened to be adding to, and filing it
+     * there by default would put Cards in a Deck nobody chose for them.
+     */
+    @Test
+    fun `a share arriving on a flow aimed at a Deck is still headed for a new Deck`() = runTest {
+        val deckId = deckRepository.createDeck("Git basics")
+        val viewModel = viewModel(deckId)
+
+        shareInbox.offer("https://example.com/big-o")
+
+        assertEquals(GenerateTarget.NewDeck, viewModel.uiState.value.target)
+    }
+
+    /**
+     * A Generation still running is a Generation of the Source the share has just replaced.
+     * Left to finish it would write its Cards over the share, and the user would be looking at
+     * Cards about something they had moved on from with no sign of what they sent in.
+     */
+    @Test
+    fun `a share arriving mid-Generation stops it and keeps the box`() = runTest {
+        val viewModel = viewModel()
+        viewModel.setText("Big-O notation describes how work grows with input size.")
+        generator.holdOpen()
+        viewModel.generate()
+
+        shareInbox.offer("https://example.com/dijkstra")
+        generator.finish()
+
+        assertTrue(generator.wasCancelled)
+        assertEquals("https://example.com/dijkstra", viewModel.entry().text)
+    }
+
+    private fun viewModel(deckId: Long? = null) = GenerateViewModel(
+        savedStateHandle = SavedStateHandle(
+            deckId?.let { mapOf(GenerateRoute.DECK_ID_ARG to it) } ?: emptyMap(),
+        ),
         cardGenerator = generator,
         deckRepository = deckRepository,
         cardRepository = cardRepository,

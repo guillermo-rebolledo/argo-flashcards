@@ -19,7 +19,7 @@ class SharedTextTest {
 
     @Test
     fun `shared text is what was sent`() {
-        val intent = send("Big-O notation describes how work grows with input size.")
+        val intent = sharedTextIntent("Big-O notation describes how work grows with input size.")
 
         assertEquals(
             "Big-O notation describes how work grows with input size.",
@@ -34,7 +34,7 @@ class SharedTextTest {
      */
     @Test
     fun `a shared link reads as a link`() {
-        val shared = SharedText.of(send("https://example.com/big-o"))
+        val shared = SharedText.of(sharedTextIntent("https://example.com/big-o"))
 
         assertEquals(Source.Url("https://example.com/big-o"), Source.of(shared!!))
     }
@@ -42,7 +42,7 @@ class SharedTextTest {
     /** Chrome sends the page title alongside the link. The link is what a Deck is made from. */
     @Test
     fun `the subject a browser sends alongside a link is not the Source`() {
-        val intent = send("https://example.com/big-o")
+        val intent = sharedTextIntent("https://example.com/big-o")
             .putExtra(Intent.EXTRA_SUBJECT, "Big-O notation — Example")
 
         assertEquals("https://example.com/big-o", SharedText.of(intent))
@@ -78,10 +78,6 @@ class SharedTextTest {
     /** Whitespace is nothing to generate from, and would open the flow with an empty box. */
     @Test
     fun `blank shared text carries no Source`() {
-        assertNull(SharedText.of(send("   \n  ")))
+        assertNull(SharedText.of(sharedTextIntent("   \n  ")))
     }
-
-    private fun send(text: String) = Intent(Intent.ACTION_SEND)
-        .setType("text/plain")
-        .putExtra(Intent.EXTRA_TEXT, text)
 }

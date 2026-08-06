@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 /**
  * Where a share waits between arriving at the activity and being picked up by the Add Cards
  * flow. It holds one text, because a share is an instruction to generate from this — a queue
- * of them would mean opening the flow again for material the user has moved on from.
+ * of them would mean opening the flow again for a Source the user has moved on from.
  *
  * It exists so that the payload never travels as a navigation argument: a shared article can
  * be long, and a route is not a place to put it.

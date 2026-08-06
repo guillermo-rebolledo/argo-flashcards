@@ -11,6 +11,7 @@ import dev.memoji.flashcards.core.generation.GenerationResult
 import dev.memoji.flashcards.core.model.DeckSummary
 import dev.memoji.flashcards.core.share.ShareInbox
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,6 +49,9 @@ internal class GenerateViewModel @Inject constructor(
     private val _savedDeckId = MutableStateFlow<Long?>(null)
     val savedDeckId: StateFlow<Long?> = _savedDeckId.asStateFlow()
 
+    /** The Generation in flight, kept only so that a share arriving can call it off. */
+    private var generation: Job? = null
+
     init {
         // The Decks are read for the picker, and the target's name is taken from the same
         // reading: it stays what the Deck is called, and a Deck deleted from the list behind
@@ -73,7 +77,19 @@ internal class GenerateViewModel @Inject constructor(
                 // take this screen off the stack, so the share is left waiting for the flow it
                 // opens rather than being stranded on a screen that is leaving.
                 if (_uiState.value.isSaving) return@collect
-                _uiState.update { it.copy(step = GenerateStep.Entry(text = text)) }
+                // A Generation still running is a Generation of the Source that has just been
+                // replaced. Left alone it would finish and write its Cards over the share, so
+                // it is stopped — which also stops the request the user is paying for.
+                generation?.cancel()
+                _uiState.update {
+                    it.copy(
+                        step = GenerateStep.Entry(text = text),
+                        // A share names no Deck. Whatever this flow was aimed at, a Source
+                        // sent in from elsewhere is not something to file into that Deck by
+                        // default — the picker is there to say otherwise.
+                        target = GenerateTarget.NewDeck,
+                    )
+                }
                 shareInbox.take(text)
             }
         }
@@ -93,7 +109,7 @@ internal class GenerateViewModel @Inject constructor(
         if (!entry.canGenerate) return
 
         _uiState.value = state.copy(step = GenerateStep.Busy)
-        viewModelScope.launch {
+        generation = viewModelScope.launch {
             // Whatever the box was read as is what gets generated from — the same call the
             // screen showed a hint from before the tap.
             val step = when (val result = cardGenerator.generate(entry.source)) {

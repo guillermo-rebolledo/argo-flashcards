@@ -20,7 +20,7 @@ internal object SharedText {
         // The manifest asks for text/plain. The check stays a subtype wider because what is
         // read below is text whatever the sender labelled it, and a share that reached us is
         // one the user chose this app for.
-        if (intent.type?.startsWith(TEXT) != true) return null
+        if (intent.type?.startsWith(TEXT_MIME_PREFIX) != true) return null
         // As a CharSequence rather than a String: a selection shared out of a reader arrives
         // styled, and the styling is not part of the Source.
         val text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
@@ -28,5 +28,5 @@ internal object SharedText {
         return text?.takeIf { it.isNotBlank() }
     }
 
-    private const val TEXT = "text/"
+    private const val TEXT_MIME_PREFIX = "text/"
 }

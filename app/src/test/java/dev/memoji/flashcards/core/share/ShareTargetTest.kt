@@ -53,8 +53,6 @@ class ShareTargetTest {
             .queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY)
             .isNotEmpty()
 
-    private fun share(text: String) = Intent(Intent.ACTION_SEND)
-        .setType("text/plain")
-        .putExtra(Intent.EXTRA_TEXT, text)
-        .setPackage(context.packageName)
+    /** Aimed at this app, the way the share sheet aims the user's choice at it. */
+    private fun share(text: String) = sharedTextIntent(text).setPackage(context.packageName)
 }
