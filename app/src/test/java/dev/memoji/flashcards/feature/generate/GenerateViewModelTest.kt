@@ -1,10 +1,13 @@
 package dev.memoji.flashcards.feature.generate
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import dev.memoji.flashcards.core.data.FakeCardRepository
 import dev.memoji.flashcards.core.data.FakeDeckRepository
+import dev.memoji.flashcards.core.data.deckIds
+import dev.memoji.flashcards.core.data.deckNames
 import dev.memoji.flashcards.core.generation.FakeCardGenerator
 import dev.memoji.flashcards.core.generation.GeneratedCard
 import dev.memoji.flashcards.core.generation.GenerationFailure
@@ -48,7 +51,7 @@ class GenerateViewModelTest {
 
     @Test
     fun `the flow starts at an empty box`() {
-        assertEquals(GenerateUiState.Entry(), viewModel().uiState.value)
+        assertEquals(GenerateStep.Entry(), viewModel().uiState.value.step)
     }
 
     @Test
@@ -145,10 +148,10 @@ class GenerateViewModelTest {
         generator.holdOpen()
 
         viewModel.generate()
-        assertEquals(GenerateUiState.Busy, viewModel.uiState.value)
+        assertEquals(GenerateStep.Busy, viewModel.uiState.value.step)
 
         generator.finish()
-        assertTrue(viewModel.uiState.value is GenerateUiState.Proposed)
+        assertTrue(viewModel.uiState.value.step is GenerateStep.Proposed)
     }
 
     /**
@@ -163,10 +166,10 @@ class GenerateViewModelTest {
         viewModel.generate()
 
         // What a rotation does: the composable reads the state again from the same ViewModel.
-        assertEquals(GenerateUiState.Busy, viewModel.uiState.value)
+        assertEquals(GenerateStep.Busy, viewModel.uiState.value.step)
         generator.finish()
 
-        assertTrue(viewModel.uiState.value is GenerateUiState.Proposed)
+        assertTrue(viewModel.uiState.value.step is GenerateStep.Proposed)
         assertEquals(1, generator.generateCount)
     }
 
@@ -198,7 +201,7 @@ class GenerateViewModelTest {
 
         viewModel.proposed().cards.indices.forEach { viewModel.setKept(it, false) }
 
-        assertFalse(viewModel.proposed().canSave)
+        assertFalse(viewModel.uiState.value.canSave)
     }
 
     @Test
@@ -218,7 +221,7 @@ class GenerateViewModelTest {
 
         viewModel.setDeckName("  ")
 
-        assertFalse(viewModel.proposed().canSave)
+        assertFalse(viewModel.uiState.value.canSave)
         viewModel.save()
         assertEquals(emptyList<String>(), deckRepository.deckNames())
     }
@@ -449,15 +452,20 @@ class GenerateViewModelTest {
         )
     }
 
-    private fun viewModel() = GenerateViewModel(generator, deckRepository, cardRepository)
+    private fun viewModel() = GenerateViewModel(
+        savedStateHandle = SavedStateHandle(),
+        cardGenerator = generator,
+        deckRepository = deckRepository,
+        cardRepository = cardRepository,
+    )
 
     private suspend fun generatedViewModel() = viewModel().also {
         it.setText("Big-O notation describes how work grows with input size.")
         it.generate()
     }
 
-    private fun GenerateViewModel.entry() = uiState.value as GenerateUiState.Entry
-    private fun GenerateViewModel.proposed() = uiState.value as GenerateUiState.Proposed
+    private fun GenerateViewModel.entry() = uiState.value.step as GenerateStep.Entry
+    private fun GenerateViewModel.proposed() = uiState.value.step as GenerateStep.Proposed
 
     /**
      * What leaving the flow does: the ViewModel is cleared and its scope cancelled. There is
@@ -473,10 +481,4 @@ class GenerateViewModelTest {
         ViewModelProvider(store, factory)[viewModel::class.java]
         store.clear()
     }
-
-    private suspend fun FakeDeckRepository.deckIds() =
-        observeDeckSummaries().first().map { it.deck.id }
-
-    private suspend fun FakeDeckRepository.deckNames() =
-        observeDeckSummaries().first().map { it.deck.name }
 }

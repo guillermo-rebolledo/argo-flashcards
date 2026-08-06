@@ -60,20 +60,40 @@ fun FlashcardsApp(navController: NavHostController = rememberNavController()) {
                     contentPadding = innerPadding,
                     onOpenDeck = { navController.navigate(DeckDetailRoute.of(it)) },
                     onStartSession = { navController.navigate(SessionRoute.of(it)) },
-                    onAddCards = { navController.navigate(GenerateRoute.PATTERN) },
+                    onAddCards = { navController.navigate(GenerateRoute.forNewDeck()) },
                 )
             }
             composable(TopLevelDestination.PROGRESS.route) { ProgressScreen(innerPadding) }
             composable(TopLevelDestination.SETTINGS.route) { SettingsScreen(innerPadding) }
-            composable(GenerateRoute.PATTERN) {
+            composable(
+                route = GenerateRoute.PATTERN,
+                arguments = listOf(
+                    // Absent when the flow was entered from the Deck list, which is what the
+                    // default stands for: there is no Deck to add to yet.
+                    navArgument(GenerateRoute.DECK_ID_ARG) {
+                        type = NavType.LongType
+                        defaultValue = GenerateRoute.NO_DECK
+                    },
+                ),
+            ) {
                 GenerateScreen(
                     contentPadding = innerPadding,
-                    // The flow ends in the Deck it made, whether it was generated or
-                    // written by hand — and it ends: popping first means Back from the Deck
-                    // goes to the Deck list, not to a Generation that is already saved.
-                    onOpenDeck = {
-                        navController.popBackStack()
-                        navController.navigate(DeckDetailRoute.of(it))
+                    // The flow ends in the Deck the Cards went into, whether that Deck was
+                    // made here or already existed — and it ends: the flow is off the stack
+                    // either way, so Back from the Deck goes where the flow was entered
+                    // from, not to a Generation that is already saved.
+                    onOpenDeck = { deckId ->
+                        // Entered from that same Deck, going back to it is going back: the
+                        // screen behind this one is kept as the user left it rather than
+                        // replaced by a second copy of itself.
+                        val returned = navController.popBackStack(
+                            route = DeckDetailRoute.of(deckId),
+                            inclusive = false,
+                        )
+                        if (!returned) {
+                            navController.popBackStack()
+                            navController.navigate(DeckDetailRoute.of(deckId))
+                        }
                     },
                     // The one failure that is not about this attempt sends them here.
                     onOpenSettings = {
@@ -88,10 +108,15 @@ fun FlashcardsApp(navController: NavHostController = rememberNavController()) {
                 arguments = listOf(
                     navArgument(DeckDetailRoute.DECK_ID_ARG) { type = NavType.LongType },
                 ),
-            ) {
+            ) { backStack ->
+                val deckId = backStack.arguments?.getLong(DeckDetailRoute.DECK_ID_ARG)
                 DeckDetailScreen(
                     contentPadding = innerPadding,
                     onStartSession = { navController.navigate(SessionRoute.of(it)) },
+                    // The Add Cards flow, aimed at this Deck from the first frame.
+                    onGenerateCards = {
+                        deckId?.let { navController.navigate(GenerateRoute.forDeck(it)) }
+                    },
                     // popBackStack rather than navigateUp: this is also how a deleted Deck
                     // leaves, and there is no up-hierarchy to walk beyond the list.
                     onBack = { navController.popBackStack() },

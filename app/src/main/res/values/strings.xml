@@ -13,6 +13,7 @@
     <string name="action_go_back">Go back</string>
     <string name="action_close">Close</string>
     <string name="action_remove">Remove</string>
+    <string name="action_done">Done</string>
 
     <string name="generate_title">Add cards</string>
     <string name="generate_headline">Paste some text or a link</string>
@@ -31,6 +32,12 @@
     <string name="generate_busy_title">Writing your cards</string>
     <string name="generate_busy_body">This takes a few seconds. There is nothing to do here.</string>
     <string name="generate_review_title">Generated cards</string>
+    <!-- Where the Cards are headed, said on every step so it is never a surprise on save. -->
+    <string name="generate_target_label">Adding to</string>
+    <string name="generate_target_new_deck">New deck</string>
+    <string name="generate_target_new_deck_body">Made when you save, with a name you choose</string>
+    <string name="generate_target_change">Change</string>
+    <string name="generate_target_title">Add these cards to</string>
     <!-- The count is of Cards Kept, so it moves as they untick. Not a plural: it reads the
          same at every number, and "0 of 7" is a state the user can be in. -->
     <string name="generate_kept_summary" tools:ignore="PluralsCandidate">%1$d of %2$d cards kept · untick anything that does not help</string>
@@ -64,7 +71,8 @@
     <string name="decks_empty_title">No Decks yet</string>
     <string name="decks_empty_body">Your Decks will show up here. Tap Add cards to paste something in, or to write your first Deck yourself.</string>
 
-    <string name="cards_add_card">Add card</string>
+    <!-- Beside "Generate cards" on the same button, so the two read as the two ways in. -->
+    <string name="cards_write_a_card">Write a card</string>
     <string name="cards_new_card">New card</string>
     <string name="cards_edit_card">Edit card</string>
     <string name="cards_add">Add</string>
@@ -83,7 +91,7 @@
     <string name="cards_filter_learning">Learning</string>
     <string name="cards_filter_mastered">Mastered</string>
     <string name="cards_empty_title">No Cards yet</string>
-    <string name="cards_empty_body">A Card has a Front and a Back — one idea, never two. Tap Add card to write your first.</string>
+    <string name="cards_empty_body">A Card has a Front and a Back — one idea, never two. Tap Add cards to write your first, or to generate some.</string>
     <string name="cards_none_learning_title">Nothing left to learn</string>
     <string name="cards_none_learning_body">Every Card in this Deck is Mastered.</string>
     <string name="cards_none_mastered_title">Nothing Mastered yet</string>

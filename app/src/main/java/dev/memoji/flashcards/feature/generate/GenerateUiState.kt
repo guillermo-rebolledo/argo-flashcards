@@ -13,6 +13,25 @@ import dev.memoji.flashcards.core.generation.Source
 internal data class ProposedCard(val card: GeneratedCard, val kept: Boolean = true)
 
 /**
+ * Where the Cards this flow produces are headed. Shown throughout, so the destination is never
+ * something the user finds out about only after saving.
+ */
+internal sealed interface GenerateTarget {
+
+    /** Nothing exists yet: the Deck is made on save, out of the name the user gives it. */
+    data object NewDeck : GenerateTarget
+
+    /**
+     * A Deck that is already there. Its [name] is carried for the sake of saying which Deck;
+     * the flow never writes it, because the Deck is already called something.
+     */
+    data class ExistingDeck(val id: Long, val name: String) : GenerateTarget
+}
+
+/** One Deck the target can be changed to, with what the picker shows about it. */
+internal data class DeckOption(val id: Long, val name: String, val cardCount: Int)
+
+/**
  * What a failure offers to do about itself.
  */
 internal enum class FailureAction {
@@ -67,7 +86,8 @@ internal val GenerationFailure.copy: FailureCopy
             FailureCopy(R.string.generate_error_no_cards, FailureAction.NONE)
     }
 
-internal sealed interface GenerateUiState {
+/** How far through the flow the user is. Where the Cards are headed sits beside it, not in it. */
+internal sealed interface GenerateStep {
 
     /**
      * Where the flow starts and where a failure lands: the box to paste into, what was pasted,
@@ -76,7 +96,7 @@ internal sealed interface GenerateUiState {
     data class Entry(
         val text: String = "",
         val failure: GenerationFailure? = null,
-    ) : GenerateUiState {
+    ) : GenerateStep {
 
         /**
          * What the app made of what is in the box, shown before generating so the user can see
@@ -96,7 +116,7 @@ internal sealed interface GenerateUiState {
     }
 
     /** Nothing for the user to do, which the screen says out loud. */
-    data object Busy : GenerateUiState
+    data object Busy : GenerateStep
 
     /**
      * The proposed Cards, held in memory, waiting to be Kept. Unticking one drops it here and
@@ -111,13 +131,42 @@ internal sealed interface GenerateUiState {
         /** Kept so that backing out of a Generation does not mean pasting it all again. */
         val sourceText: String,
         val saving: Boolean = false,
-    ) : GenerateUiState {
+    ) : GenerateStep {
 
         val keptCount: Int get() = cards.count(ProposedCard::kept)
-
-        /** Nothing ticked is nothing to save, and a Deck has to be called something. */
-        val canSave: Boolean get() = keptCount > 0 && deckName.isNotBlank() && !saving
     }
+}
+
+/**
+ * The step and where its Cards are headed, together: whether a Deck name is asked for, and
+ * whether there is anything to save, are questions only the two of them answer between them.
+ */
+internal data class GenerateUiState(
+    val step: GenerateStep = GenerateStep.Entry(),
+    val target: GenerateTarget = GenerateTarget.NewDeck,
+    /** Every Deck the target can be changed to, for the picker. */
+    val decks: List<DeckOption> = emptyList(),
+) {
+
+    /**
+     * A Deck that exists is already called something, and this flow is not a way to rename it,
+     * so the name field is not shown at all when the Cards are headed for one.
+     */
+    val isNamingNewDeck: Boolean get() = target is GenerateTarget.NewDeck
+
+    /** The Cards are on their way to the Deck. Nothing about where they are going can move. */
+    val isSaving: Boolean get() = (step as? GenerateStep.Proposed)?.saving == true
+
+    /**
+     * Nothing ticked is nothing to save; a new Deck also has to be called something, which an
+     * existing one already is.
+     */
+    val canSave: Boolean
+        get() {
+            val proposed = step as? GenerateStep.Proposed ?: return false
+            if (proposed.keptCount == 0 || isSaving) return false
+            return !isNamingNewDeck || proposed.deckName.isNotBlank()
+        }
 }
 
 private val WHITESPACE = Regex("\\s+")

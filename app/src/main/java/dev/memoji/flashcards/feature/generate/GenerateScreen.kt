@@ -74,6 +74,9 @@ fun GenerateScreen(
         onBackToEntry = viewModel::backToEntry,
         onPasteTextInstead = viewModel::pasteTextInstead,
         onCreateEmptyDeck = viewModel::createEmptyDeck,
+        onOpenTargetDeck = viewModel::openTargetDeck,
+        onAddToNewDeck = viewModel::addToNewDeck,
+        onAddToDeck = viewModel::addToDeck,
         onOpenSettings = onOpenSettings,
         onClose = onClose,
         contentPadding = contentPadding,
@@ -91,11 +94,16 @@ internal fun GenerateScreen(
     onBackToEntry: (String) -> Unit,
     onPasteTextInstead: () -> Unit,
     onCreateEmptyDeck: (String) -> Unit,
+    onOpenTargetDeck: () -> Unit,
+    onAddToNewDeck: () -> Unit,
+    onAddToDeck: (Long) -> Unit,
     onOpenSettings: () -> Unit,
     onClose: () -> Unit,
     contentPadding: PaddingValues,
 ) {
     var namingDeck by rememberSaveable { mutableStateOf(false) }
+    var pickingTarget by rememberSaveable { mutableStateOf(false) }
+    val step = uiState.step
 
     Column(
         modifier = Modifier
@@ -104,7 +112,7 @@ internal fun GenerateScreen(
     ) {
         // Pasting and waiting are the same screen mid-thought, so they keep the same header:
         // only the step that has something to go back to gets a back arrow.
-        if (uiState is GenerateUiState.Proposed) {
+        if (step is GenerateStep.Proposed) {
             Header(
                 title = stringResource(R.string.generate_review_title),
                 icon = {
@@ -115,7 +123,7 @@ internal fun GenerateScreen(
                 },
                 // Back goes to the box rather than out of the flow, so a Generation the user
                 // did not like is one tap from being tried again.
-                onNavigate = { onBackToEntry(uiState.sourceText) },
+                onNavigate = { onBackToEntry(step.sourceText) },
             )
         } else {
             Header(
@@ -125,25 +133,42 @@ internal fun GenerateScreen(
             )
         }
 
-        when (uiState) {
-            is GenerateUiState.Entry -> {
+        // Where the Cards are headed, on every step that has a next one. Not shown while the
+        // Generation is in flight: nothing on that screen is for the user to act on. The one
+        // control is off once the save is under way — the Cards are already on their way to
+        // the Deck named here, and changing it then would only be a lie about where they went.
+        if (step !is GenerateStep.Busy) {
+            DeckTargetRow(
+                target = uiState.target,
+                onChange = { pickingTarget = true },
+                enabled = !uiState.isSaving,
+            )
+        }
+
+        when (step) {
+            is GenerateStep.Entry -> {
                 SourceEntry(
-                    uiState = uiState,
+                    step = step,
                     onSetText = onSetText,
                     onGenerate = onGenerate,
                     onOpenSettings = onOpenSettings,
                     onPasteTextInstead = onPasteTextInstead,
-                    onWriteThemMyself = { namingDeck = true },
+                    // Writing them by hand happens in the Deck itself. A Deck that already
+                    // exists is one to open; a new one has to be named and made first.
+                    onWriteThemMyself = {
+                        if (uiState.isNamingNewDeck) namingDeck = true else onOpenTargetDeck()
+                    },
                     bottomPadding = contentPadding.calculateBottomPadding(),
                     modifier = Modifier.weight(1f),
                 )
             }
 
-            GenerateUiState.Busy -> Busy(modifier = Modifier.weight(1f))
+            GenerateStep.Busy -> Busy(modifier = Modifier.weight(1f))
 
-            is GenerateUiState.Proposed -> {
+            is GenerateStep.Proposed -> {
                 ProposedCards(
                     uiState = uiState,
+                    step = step,
                     onSetKept = onSetKept,
                     onSetDeckName = onSetDeckName,
                     onSave = onSave,
@@ -164,6 +189,22 @@ internal fun GenerateScreen(
                 namingDeck = false
             },
             onDismiss = { namingDeck = false },
+        )
+    }
+
+    if (pickingTarget) {
+        DeckTargetDialog(
+            target = uiState.target,
+            decks = uiState.decks,
+            onPickNewDeck = {
+                onAddToNewDeck()
+                pickingTarget = false
+            },
+            onPickDeck = {
+                onAddToDeck(it)
+                pickingTarget = false
+            },
+            onDismiss = { pickingTarget = false },
         )
     }
 }
@@ -187,7 +228,7 @@ private fun Header(title: String, icon: @Composable () -> Unit, onNavigate: () -
 
 @Composable
 private fun SourceEntry(
-    uiState: GenerateUiState.Entry,
+    step: GenerateStep.Entry,
     onSetText: (String) -> Unit,
     onGenerate: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -213,7 +254,7 @@ private fun SourceEntry(
         }
 
         OutlinedTextField(
-            value = uiState.text,
+            value = step.text,
             onValueChange = onSetText,
             placeholder = { Text(stringResource(R.string.generate_placeholder)) },
             modifier = Modifier
@@ -224,19 +265,19 @@ private fun SourceEntry(
 
         // What the app made of what is in the box, in the user's terms: a link it recognised
         // as one, or a count of what they pasted. Only once there is something to say.
-        if (uiState.isUrl) {
+        if (step.isUrl) {
             Text(
                 text = stringResource(R.string.generate_link_detected),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 20.dp),
             )
-        } else if (uiState.wordCount > 0) {
+        } else if (step.wordCount > 0) {
             Text(
                 text = pluralStringResource(
                     R.plurals.generate_word_count,
-                    uiState.wordCount,
-                    uiState.wordCount,
+                    step.wordCount,
+                    step.wordCount,
                 ),
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -244,7 +285,7 @@ private fun SourceEntry(
             )
         }
 
-        uiState.failureCopy?.let { copy ->
+        step.failureCopy?.let { copy ->
             GenerationFailureMessage(
                 copy = copy,
                 onOpenSettings = onOpenSettings,
@@ -264,7 +305,7 @@ private fun SourceEntry(
         ) {
             Button(
                 onClick = onGenerate,
-                enabled = uiState.canGenerate,
+                enabled = step.canGenerate,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(stringResource(R.string.generate_action))
@@ -340,7 +381,9 @@ private fun Busy(modifier: Modifier = Modifier) {
 
 @Composable
 private fun ProposedCards(
-    uiState: GenerateUiState.Proposed,
+    uiState: GenerateUiState,
+    /** The same step [uiState] holds, already narrowed by the caller's `when`. */
+    step: GenerateStep.Proposed,
     onSetKept: (Int, Boolean) -> Unit,
     onSetDeckName: (String) -> Unit,
     onSave: () -> Unit,
@@ -348,27 +391,32 @@ private fun ProposedCards(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
-        OutlinedTextField(
-            value = uiState.deckName,
-            onValueChange = onSetDeckName,
-            label = { Text(stringResource(R.string.decks_name_label)) },
-            singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
-        )
+        // Absent when the Cards are headed for a Deck that already has a name — that one is
+        // already called something, and this flow must not rename it. The row above says
+        // which Deck it is, so nothing here is left unsaid.
+        if (uiState.isNamingNewDeck) {
+            OutlinedTextField(
+                value = step.deckName,
+                onValueChange = onSetDeckName,
+                label = { Text(stringResource(R.string.decks_name_label)) },
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 16.dp),
+            )
+        }
         Text(
             text = stringResource(
                 R.string.generate_kept_summary,
-                uiState.keptCount,
-                uiState.cards.size,
+                step.keptCount,
+                step.cards.size,
             ),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp),
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
         )
         LazyColumn(modifier = Modifier.weight(1f)) {
-            itemsIndexed(uiState.cards) { index, proposed ->
+            itemsIndexed(step.cards) { index, proposed ->
                 ProposedCardRow(
                     proposed = proposed,
                     onSetKept = { onSetKept(index, it) },
@@ -390,8 +438,8 @@ private fun ProposedCards(
                     Text(
                         pluralStringResource(
                             R.plurals.generate_save,
-                            uiState.keptCount,
-                            uiState.keptCount,
+                            step.keptCount,
+                            step.keptCount,
                         ),
                     )
                 }

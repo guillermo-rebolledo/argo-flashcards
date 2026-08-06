@@ -37,6 +37,11 @@ _Avoid_: Import, extraction, parsing
 A generated Card the user ticked to include before saving. Unkept Cards are discarded, never stored.
 _Avoid_: Selected, accepted, approved
 
+**Target**:
+The Deck a Generation's Kept Cards are written into — a Deck that already exists, or a new one
+made on save. Named on screen throughout, and changeable until the save begins.
+_Avoid_: Destination, chosen deck
+
 ### Studying
 
 **Session**:
