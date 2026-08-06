@@ -9,10 +9,12 @@ import dev.memoji.flashcards.core.data.DeckRepository
 import dev.memoji.flashcards.core.generation.CardGenerator
 import dev.memoji.flashcards.core.generation.GenerationResult
 import dev.memoji.flashcards.core.model.DeckSummary
+import dev.memoji.flashcards.core.share.ShareInbox
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -32,6 +34,7 @@ internal class GenerateViewModel @Inject constructor(
     private val cardGenerator: CardGenerator,
     private val deckRepository: DeckRepository,
     private val cardRepository: CardRepository,
+    private val shareInbox: ShareInbox,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -57,6 +60,21 @@ internal class GenerateViewModel @Inject constructor(
                         target = state.target.reconciledWith(summaries),
                     )
                 }
+            }
+        }
+
+        // A share is a Source arriving from outside, and it lands where a paste would: in the
+        // box, at the start of the flow. It replaces whatever was there, including a
+        // Generation already proposed — those Cards were never written, and the user has just
+        // said what they want Cards about instead.
+        viewModelScope.launch {
+            shareInbox.shared.filterNotNull().collect { text ->
+                // Except once the Kept Cards are on their way to a Deck. That save is about to
+                // take this screen off the stack, so the share is left waiting for the flow it
+                // opens rather than being stranded on a screen that is leaving.
+                if (_uiState.value.isSaving) return@collect
+                _uiState.update { it.copy(step = GenerateStep.Entry(text = text)) }
+                shareInbox.take(text)
             }
         }
     }

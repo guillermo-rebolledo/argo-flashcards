@@ -13,6 +13,7 @@ import dev.memoji.flashcards.core.generation.GeneratedCard
 import dev.memoji.flashcards.core.generation.GenerationFailure
 import dev.memoji.flashcards.core.generation.GenerationResult
 import dev.memoji.flashcards.core.generation.Source
+import dev.memoji.flashcards.core.share.ShareInbox
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -457,6 +458,7 @@ class GenerateViewModelTest {
         cardGenerator = generator,
         deckRepository = deckRepository,
         cardRepository = cardRepository,
+        shareInbox = ShareInbox(),
     )
 
     private suspend fun generatedViewModel() = viewModel().also {

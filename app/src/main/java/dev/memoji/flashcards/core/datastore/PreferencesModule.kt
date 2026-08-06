@@ -31,5 +31,6 @@ internal object PreferencesModule {
             produceFile = { context.preferencesDataStoreFile(PREFERENCES_NAME) },
         )
 
-    private const val PREFERENCES_NAME = "settings"
+    /** Not private: the backup rules are checked against the file this names. */
+    const val PREFERENCES_NAME = "settings"
 }

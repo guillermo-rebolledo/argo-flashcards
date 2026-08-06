@@ -7,6 +7,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -29,12 +30,33 @@ import dev.memoji.flashcards.feature.session.SessionScreen
 import dev.memoji.flashcards.feature.settings.SettingsScreen
 import dev.memoji.flashcards.ui.navigation.TopLevelDestination
 
+/**
+ * [sharedText] is material another app sent in. It opens the Add Cards flow with the text
+ * already in the box; the flow itself takes it from there.
+ */
 @Composable
-fun FlashcardsApp(navController: NavHostController = rememberNavController()) {
+fun FlashcardsApp(
+    sharedText: String? = null,
+    navController: NavHostController = rememberNavController(),
+) {
     val backStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = TopLevelDestination.forRoute(backStackEntry?.destination?.route)
+    val currentRoute = backStackEntry?.destination?.route
+    val currentDestination = TopLevelDestination.forRoute(currentRoute)
     // Null before the graph has attached, which is the start destination on its way in — a tab.
     val onTopLevel = backStackEntry == null || currentDestination != null
+
+    // A share is the Add Cards flow entered from outside, so it opens that flow — unless the
+    // flow is already open, where the screen picks the text up where it stands. One Generation
+    // either way, never a second stacked on the first.
+    //
+    // Keyed on where the user is as well as on the text: a share landing while a save is
+    // finishing is left waiting by the flow that is leaving, and this is what offers it to the
+    // one that follows rather than dropping it.
+    LaunchedEffect(sharedText, currentRoute) {
+        if (sharedText != null && currentRoute != null && currentRoute != GenerateRoute.PATTERN) {
+            navController.navigate(GenerateRoute.forNewDeck())
+        }
+    }
 
     Scaffold(
         bottomBar = {

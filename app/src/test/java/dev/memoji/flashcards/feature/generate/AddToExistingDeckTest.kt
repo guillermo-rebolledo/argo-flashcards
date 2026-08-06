@@ -6,6 +6,7 @@ import dev.memoji.flashcards.core.data.FakeDeckRepository
 import dev.memoji.flashcards.core.data.deckIds
 import dev.memoji.flashcards.core.data.deckNames
 import dev.memoji.flashcards.core.generation.FakeCardGenerator
+import dev.memoji.flashcards.core.share.ShareInbox
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -226,6 +227,7 @@ class AddToExistingDeckTest {
         cardGenerator = generator,
         deckRepository = deckRepository,
         cardRepository = cardRepository,
+        shareInbox = ShareInbox(),
     )
 
     private suspend fun generatedViewModel(deckId: Long? = null) = viewModel(deckId).also {
